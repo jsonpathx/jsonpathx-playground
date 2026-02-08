@@ -13,13 +13,6 @@ export function escapeJsonString(str: string): string {
 }
 
 /**
- * Escape special characters for shell strings
- */
-export function escapeShellString(str: string): string {
-  return str.replace(/'/g, "'\\''");
-}
-
-/**
  * Format JSON data for code insertion with size limit
  */
 export function formatDataForCode(data: unknown, maxItems = 3): string {
@@ -133,131 +126,6 @@ runQuery();{{ASYNC_END}}{{ERROR_HANDLING_START}}{{SYNC_ONLY}} catch (error) {
 }{{ERROR_HANDLING_END}}{{SYNC_ONLY}}`
   },
 
-  python: {
-    name: 'Python',
-    language: 'python',
-    install: 'pip install jsonpath-ng',
-    installCommand: 'pip install jsonpath-ng',
-    extension: 'py',
-    description: 'Python with jsonpath-ng library',
-    supportsAsync: false,
-    template: `# Install dependencies: {{INSTALL}}
-# File: example.py
-
-import json
-from jsonpath_ng import parse
-{{ERROR_HANDLING_IMPORT}}
-
-{{COMMENTS_START}}
-# Sample data for JSONPath query
-{{COMMENTS_END}}
-data = {{DATA_PYTHON}}
-
-{{COMMENTS_START}}
-# JSONPath query to execute
-{{COMMENTS_END}}
-query = '{{QUERY}}'
-
-{{ERROR_HANDLING_START}}try:
-    {{COMMENTS_START}}# Parse and execute the JSONPath query
-    {{COMMENTS_END}}{{ERROR_HANDLING_END}}jsonpath_expr = parse(query)
-    matches = jsonpath_expr.find(data)
-
-    {{COMMENTS_START}}# Extract values from matches
-    {{COMMENTS_END}}results = [match.value for match in matches]
-
-    {{COMMENTS_START}}# Display results
-    {{COMMENTS_END}}print('Query Results:')
-    print(json.dumps(results, indent=2))
-    print(f'\\nFound {len(results)} result(s)')
-{{ERROR_HANDLING_START}}
-except Exception as error:
-    print(f'Error executing query: {str(error)}', file=sys.stderr)
-    sys.exit(1){{ERROR_HANDLING_END}}`
-  },
-
-  curl: {
-    name: 'cURL (API)',
-    language: 'curl',
-    install: 'Requires JSONPathX API endpoint',
-    installCommand: '',
-    extension: 'sh',
-    description: 'HTTP request with cURL',
-    supportsAsync: false,
-    template: `#!/bin/bash
-# File: query.sh
-# Make sure your JSONPathX API is running
-
-{{COMMENTS_START}}
-# API endpoint (update with your actual endpoint)
-{{COMMENTS_END}}
-API_ENDPOINT="http://localhost:3000/api/query"
-
-{{COMMENTS_START}}
-# Prepare the request data
-{{COMMENTS_END}}
-REQUEST_DATA='{{REQUEST_JSON}}'
-
-{{COMMENTS_START}}
-# Execute the query via HTTP POST
-{{COMMENTS_END}}
-curl -X POST "$API_ENDPOINT" \\
-  -H "Content-Type: application/json" \\
-  -d "$REQUEST_DATA" \\
-  {{ERROR_HANDLING_START}}-w "\\nHTTP Status: %{http_code}\\n" \\
-  -s {{ERROR_HANDLING_END}}| jq '.'
-
-{{COMMENTS_START}}
-# Alternative: Save response to file
-{{COMMENTS_END}}
-# curl -X POST "$API_ENDPOINT" \\
-#   -H "Content-Type: application/json" \\
-#   -d "$REQUEST_DATA" \\
-#   -o results.json`
-  },
-
-  'bash-jq': {
-    name: 'Bash + jq',
-    language: 'bash-jq',
-    install: 'brew install jq  # macOS',
-    installCommand: 'apt-get install jq  # Linux',
-    extension: 'sh',
-    description: 'Command-line JSON processing with jq',
-    supportsAsync: false,
-    template: `#!/bin/bash
-# File: query.sh
-# Install jq: brew install jq (macOS) or apt-get install jq (Linux)
-
-{{COMMENTS_START}}
-# Sample data (you can also load from file: cat data.json | jq ...)
-{{COMMENTS_END}}
-DATA='{{DATA_JSON}}'
-
-{{COMMENTS_START}}
-# JSONPath query converted to jq syntax
-# Note: jq uses different syntax than JSONPath
-# This is an approximate conversion
-{{COMMENTS_END}}
-JQ_QUERY='{{JQ_QUERY}}'
-
-{{COMMENTS_START}}
-# Execute the jq query
-{{COMMENTS_END}}
-{{ERROR_HANDLING_START}}set -e  # Exit on error
-{{ERROR_HANDLING_END}}
-echo "$DATA" | jq "$JQ_QUERY"
-
-{{COMMENTS_START}}
-# Alternative: Load from file
-{{COMMENTS_END}}
-# jq "$JQ_QUERY" data.json
-
-{{COMMENTS_START}}
-# Save results to file
-{{COMMENTS_END}}
-# echo "$DATA" | jq "$JQ_QUERY" > results.json`
-  },
-
   browser: {
     name: 'Browser JavaScript',
     language: 'browser',
@@ -346,34 +214,6 @@ echo "$DATA" | jq "$JQ_QUERY"
 };
 
 /**
- * Convert JSONPath query to jq syntax (basic conversion)
- */
-export function convertToJqSyntax(jsonPath: string): string {
-  // Basic conversions - this is simplified
-  let jq = jsonPath;
-
-  // Root selector
-  jq = jq.replace(/^\$/, '.');
-
-  // Array slicing
-  jq = jq.replace(/\[(\d+):(\d+)\]/g, '.[$1:$2]');
-  jq = jq.replace(/\[(\d+):\]/g, '.[$1:]');
-  jq = jq.replace(/\[:(\d+)\]/g, '.[:$1]');
-
-  // Recursive descent
-  jq = jq.replace(/\.\./g, '..');
-
-  // Wildcard
-  jq = jq.replace(/\[\*\]/g, '.[]');
-  jq = jq.replace(/\.\*/g, '.[]');
-
-  // Filter expressions - basic conversion
-  jq = jq.replace(/\[\?@\.([^\s]+)\s*([><=]+)\s*([^\]]+)\]/g, ' | select(.$1 $2 $3)');
-
-  return jq;
-}
-
-/**
  * Generate import statements based on language and async preference
  */
 export function generateImports(language: string, useAsync: boolean): string {
@@ -386,9 +226,6 @@ export function generateImports(language: string, useAsync: boolean): string {
 
     case 'typescript':
       return `import { query } from '@jsonpathx/jsonpathx';`;
-
-    case 'python':
-      return `import json\nfrom jsonpath_ng import parse`;
 
     default:
       return '';
@@ -407,9 +244,6 @@ export function generateQueryExecution(language: string, useAsync: boolean): str
     case 'browser':
       return 'await query(query, data)';
 
-    case 'python':
-      return 'jsonpath_expr.find(data)';
-
     default:
       return '';
   }
@@ -427,7 +261,5 @@ export function getBrowserScriptTag(): string {
   <script type="module">
     import { query } from './path/to/jsonpathx.js';
     window.jsonpathx = { query };
-  </script>
-
-  <!-- For this example, we'll use a mock implementation -->`;
+  </script>`;
 }

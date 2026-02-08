@@ -11,9 +11,6 @@ const LanguageSelector = ({ selectedLanguage, onChange }: LanguageSelectorProps)
   const languages: SupportedLanguage[] = [
     'javascript',
     'typescript',
-    'python',
-    'curl',
-    'bash-jq',
     'browser',
   ];
 

@@ -83,7 +83,7 @@ const CodeGenerator = ({ query, data, results, onClose }: CodeGeneratorProps) =>
               <span>Code Generator</span>
             </h2>
             <p className="text-blue-100 text-sm mt-1">
-              Generate ready-to-use code in multiple languages
+              Generate ready-to-use code in JavaScript, TypeScript, or Browser JS
             </p>
           </div>
           <button

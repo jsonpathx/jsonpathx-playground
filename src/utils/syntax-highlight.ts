@@ -104,173 +104,6 @@ function tokenizeJavaScript(code: string): HighlightToken[] {
 }
 
 /**
- * Tokenize Python code
- */
-function tokenizePython(code: string): HighlightToken[] {
-  const tokens: HighlightToken[] = [];
-  const keywords = /\b(def|class|if|elif|else|for|while|return|import|from|as|try|except|finally|with|pass|break|continue|raise|yield|lambda|and|or|not|in|is|None|True|False)\b/g;
-  const strings = /(["'])(?:(?=(\\?))\2.)*?\1/g;
-  const comments = /#.*$/gm;
-  const numbers = /\b(\d+\.?\d*)\b/g;
-  const functions = /\b([a-zA-Z_][a-zA-Z0-9_]*)\s*(?=\()/g;
-
-  let lastIndex = 0;
-  const matches: Array<{ index: number; length: number; type: string; value: string }> = [];
-
-  let match;
-
-  // Comments
-  while ((match = comments.exec(code)) !== null) {
-    matches.push({
-      index: match.index,
-      length: match[0].length,
-      type: 'comment',
-      value: match[0],
-    });
-  }
-
-  // Strings
-  while ((match = strings.exec(code)) !== null) {
-    matches.push({
-      index: match.index,
-      length: match[0].length,
-      type: 'string',
-      value: match[0],
-    });
-  }
-
-  // Keywords
-  while ((match = keywords.exec(code)) !== null) {
-    matches.push({
-      index: match.index,
-      length: match[0].length,
-      type: 'keyword',
-      value: match[0],
-    });
-  }
-
-  // Functions
-  while ((match = functions.exec(code)) !== null) {
-    matches.push({
-      index: match.index,
-      length: match[0].length,
-      type: 'function',
-      value: match[0],
-    });
-  }
-
-  // Numbers
-  while ((match = numbers.exec(code)) !== null) {
-    matches.push({
-      index: match.index,
-      length: match[0].length,
-      type: 'number',
-      value: match[0],
-    });
-  }
-
-  matches.sort((a, b) => a.index - b.index);
-
-  const filteredMatches = matches.filter((m, i) => {
-    if (i === 0) return true;
-    const prev = matches[i - 1];
-    return m.index >= prev.index + prev.length;
-  });
-
-  filteredMatches.forEach((m) => {
-    if (m.index > lastIndex) {
-      tokens.push({ type: 'text', value: code.slice(lastIndex, m.index) });
-    }
-    tokens.push({ type: m.type, value: m.value });
-    lastIndex = m.index + m.length;
-  });
-
-  if (lastIndex < code.length) {
-    tokens.push({ type: 'text', value: code.slice(lastIndex) });
-  }
-
-  return tokens;
-}
-
-/**
- * Tokenize Shell/Bash code
- */
-function tokenizeShell(code: string): HighlightToken[] {
-  const tokens: HighlightToken[] = [];
-  const keywords = /\b(if|then|else|elif|fi|for|while|do|done|case|esac|function|return|exit|break|continue|set|export|source)\b/g;
-  const strings = /(["'])(?:(?=(\\?))\2.)*?\1/g;
-  const comments = /#.*$/gm;
-  const variables = /\$\{?[a-zA-Z_][a-zA-Z0-9_]*\}?/g;
-
-  let lastIndex = 0;
-  const matches: Array<{ index: number; length: number; type: string; value: string }> = [];
-
-  let match;
-
-  // Comments
-  while ((match = comments.exec(code)) !== null) {
-    matches.push({
-      index: match.index,
-      length: match[0].length,
-      type: 'comment',
-      value: match[0],
-    });
-  }
-
-  // Strings
-  while ((match = strings.exec(code)) !== null) {
-    matches.push({
-      index: match.index,
-      length: match[0].length,
-      type: 'string',
-      value: match[0],
-    });
-  }
-
-  // Variables
-  while ((match = variables.exec(code)) !== null) {
-    matches.push({
-      index: match.index,
-      length: match[0].length,
-      type: 'variable',
-      value: match[0],
-    });
-  }
-
-  // Keywords
-  while ((match = keywords.exec(code)) !== null) {
-    matches.push({
-      index: match.index,
-      length: match[0].length,
-      type: 'keyword',
-      value: match[0],
-    });
-  }
-
-  matches.sort((a, b) => a.index - b.index);
-
-  const filteredMatches = matches.filter((m, i) => {
-    if (i === 0) return true;
-    const prev = matches[i - 1];
-    return m.index >= prev.index + prev.length;
-  });
-
-  filteredMatches.forEach((m) => {
-    if (m.index > lastIndex) {
-      tokens.push({ type: 'text', value: code.slice(lastIndex, m.index) });
-    }
-    tokens.push({ type: m.type, value: m.value });
-    lastIndex = m.index + m.length;
-  });
-
-  if (lastIndex < code.length) {
-    tokens.push({ type: 'text', value: code.slice(lastIndex) });
-  }
-
-  return tokens;
-}
-
-/**
  * Get token class based on type
  */
 function getTokenClass(type: string): string {
@@ -334,18 +167,8 @@ export function highlightCode(code: string, language: SupportedLanguage): string
       tokens = tokenizeJavaScript(code);
       break;
 
-    case 'python':
-      tokens = tokenizePython(code);
-      break;
-
-    case 'bash-jq':
-    case 'curl':
-      tokens = tokenizeShell(code);
-      break;
-
     case 'browser':
-      // HTML - just do basic highlighting for script sections
-      // For simplicity, we'll treat it as JavaScript for the script parts
+      // Treat as JavaScript for highlighting
       tokens = tokenizeJavaScript(code);
       break;
 
@@ -364,9 +187,6 @@ export function getLanguageDisplayName(language: SupportedLanguage): string {
   const names: Record<SupportedLanguage, string> = {
     javascript: 'JavaScript',
     typescript: 'TypeScript',
-    python: 'Python',
-    curl: 'cURL',
-    'bash-jq': 'Bash + jq',
     browser: 'Browser',
   };
   return names[language] || language;
@@ -379,9 +199,6 @@ export function getLanguageIcon(language: SupportedLanguage): string {
   const icons: Record<SupportedLanguage, string> = {
     javascript: '🟨',
     typescript: '🔷',
-    python: '🐍',
-    curl: '🌐',
-    'bash-jq': '💻',
     browser: '🌍',
   };
   return icons[language] || '📄';

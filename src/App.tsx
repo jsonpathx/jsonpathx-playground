@@ -410,7 +410,7 @@ setShowShortcutsHelp(false);
             <p className="mb-2">
               Built with{' '}
               <a
-                href="https://github.com/afzal/jsonpathx"
+                href="https://github.com/jsonpathx/jsonpathx"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"

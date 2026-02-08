@@ -1,9 +1,6 @@
 export type SupportedLanguage =
   | 'javascript'
   | 'typescript'
-  | 'python'
-  | 'curl'
-  | 'bash-jq'
   | 'browser';
 
 export interface LanguageTemplate {

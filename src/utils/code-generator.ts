@@ -3,8 +3,6 @@ import {
   LANGUAGE_TEMPLATES,
   formatDataForCode,
   escapeJsonString,
-  escapeShellString,
-  convertToJqSyntax,
   generateImports,
   generateQueryExecution,
   getBrowserScriptTag,
@@ -43,29 +41,11 @@ export function generateCode(
 
   // Replace data
   if (includeData) {
-    if (language === 'python') {
-      // Python uses single quotes for strings by convention
-      const pythonData = JSON.stringify(data, null, 2).replace(/"/g, "'");
-      code = code.replace(/{{DATA_PYTHON}}/g, pythonData);
-    } else if (language === 'curl' || language === 'bash-jq') {
-      // For shell scripts, escape the JSON
-      const jsonData = JSON.stringify(data);
-      const escapedData = escapeShellString(jsonData);
-      code = code.replace(/{{DATA_JSON}}/g, escapedData);
-    } else {
-      // JavaScript/TypeScript/Browser
-      const formattedData = formatDataForCode(data, maxDataPreview);
-      code = code.replace(/{{DATA}}/g, formattedData);
-    }
+    const formattedData = formatDataForCode(data, maxDataPreview);
+    code = code.replace(/{{DATA}}/g, formattedData);
   } else {
-    // Placeholder for loading data from file
-    if (language === 'python') {
-      code = code.replace(
-        /{{DATA_PYTHON}}/g,
-        `json.loads(open('data.json').read())  # Load from file`
-      );
-    } else if (language === 'bash-jq') {
-      code = code.replace(/{{DATA_JSON}}/g, '$(cat data.json)');
+    if (language === 'browser') {
+      code = code.replace(/{{DATA}}/g, `await (await fetch('./data.json')).json()  // Load from file`);
     } else {
       code = code.replace(/{{DATA}}/g, `require('./data.json')  // Load from file`);
     }
@@ -74,22 +54,6 @@ export function generateCode(
   // Replace query
   const escapedQuery = escapeJsonString(query);
   code = code.replace(/{{QUERY}}/g, escapedQuery);
-
-  // For jq, convert JSONPath to jq syntax
-  if (language === 'bash-jq') {
-    const jqQuery = convertToJqSyntax(query);
-    code = code.replace(/{{JQ_QUERY}}/g, jqQuery);
-  }
-
-  // For cURL, create request JSON
-  if (language === 'curl') {
-    const requestData = {
-      query,
-      data: includeData ? data : '{{YOUR_DATA}}',
-    };
-    const requestJson = JSON.stringify(requestData, null, 2).replace(/"/g, '\\"');
-    code = code.replace(/{{REQUEST_JSON}}/g, requestJson);
-  }
 
   // Replace query execution
   const queryExecution = generateQueryExecution(language, useAsync);
@@ -110,11 +74,7 @@ export function generateCode(
   if (includeErrorHandling) {
     code = code.replace(/{{ERROR_HANDLING_START}}/g, '');
     code = code.replace(/{{ERROR_HANDLING_END}}/g, '');
-    if (language === 'python') {
-      code = code.replace(/{{ERROR_HANDLING_IMPORT}}/g, 'import sys');
-    } else {
-      code = code.replace(/{{ERROR_HANDLING_IMPORT}}/g, '');
-    }
+    code = code.replace(/{{ERROR_HANDLING_IMPORT}}/g, '');
   } else {
     // Remove error handling sections
     code = code.replace(/{{ERROR_HANDLING_START}}[\s\S]*?{{ERROR_HANDLING_END}}/g, '');
@@ -157,9 +117,6 @@ export function generateAllLanguages(options: CodeGenerationOptions): GeneratedC
   const languages: SupportedLanguage[] = [
     'javascript',
     'typescript',
-    'python',
-    'curl',
-    'bash-jq',
     'browser',
   ];
 
@@ -208,53 +165,6 @@ export function getInstallationInstructions(language: SupportedLanguage): string
       instructions.push('```');
       break;
 
-    case 'python':
-      instructions.push('**Prerequisites:** Python 3.7+ installed');
-      instructions.push('');
-      instructions.push('**Installation:**');
-      instructions.push('```bash');
-      instructions.push(template.installCommand || template.install);
-      instructions.push('```');
-      instructions.push('');
-      instructions.push('**Run:**');
-      instructions.push('```bash');
-      instructions.push('python example.py');
-      instructions.push('```');
-      break;
-
-    case 'curl':
-      instructions.push('**Prerequisites:** cURL installed (usually pre-installed)');
-      instructions.push('');
-      instructions.push('**Setup:**');
-      instructions.push('Make sure you have a JSONPathX API endpoint running.');
-      instructions.push('Update the `API_ENDPOINT` variable in the script.');
-      instructions.push('');
-      instructions.push('**Run:**');
-      instructions.push('```bash');
-      instructions.push('chmod +x query.sh');
-      instructions.push('./query.sh');
-      instructions.push('```');
-      break;
-
-    case 'bash-jq':
-      instructions.push('**Prerequisites:** jq installed');
-      instructions.push('');
-      instructions.push('**Installation:**');
-      instructions.push('```bash');
-      instructions.push('# macOS');
-      instructions.push('brew install jq');
-      instructions.push('');
-      instructions.push('# Linux');
-      instructions.push('apt-get install jq');
-      instructions.push('```');
-      instructions.push('');
-      instructions.push('**Run:**');
-      instructions.push('```bash');
-      instructions.push('chmod +x query.sh');
-      instructions.push('./query.sh');
-      instructions.push('```');
-      break;
-
     case 'browser':
       instructions.push('**Prerequisites:** Modern web browser');
       instructions.push('');
@@ -268,6 +178,7 @@ export function getInstallationInstructions(language: SupportedLanguage): string
       instructions.push('# Then bundle with webpack/vite/parcel');
       instructions.push('```');
       break;
+
   }
 
   return instructions.join('\n');

@@ -183,7 +183,7 @@ This demo project follows the same license as JSONPathX.
 
 ## Learn More 🔎
 
-- [JSONPathX Documentation](https://jsonpathx.github.io/jsonpathx/)
+- [JSONPathX Documentation](https://jsonpathx.github.io/jsonpathx)
 - [JSONPath Specification](https://goessner.net/articles/JsonPath/)
 - [React Documentation](https://react.dev)
 - [Vite Documentation](https://vitejs.dev)
