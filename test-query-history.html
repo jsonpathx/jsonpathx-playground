@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Query History Test</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(to bottom right, #1a202c, #2d3748);
+            color: #fff;
+        }
+        .section {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        h1 {
+            color: #60a5fa;
+        }
+        h2 {
+            color: #93c5fd;
+            border-bottom: 2px solid #3b82f6;
+            padding-bottom: 10px;
+        }
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        button:hover {
+            background: #2563eb;
+        }
+        button.danger {
+            background: #dc2626;
+        }
+        button.danger:hover {
+            background: #b91c1c;
+        }
+        pre {
+            background: #1a202c;
+            padding: 15px;
+            border-radius: 6px;
+            overflow-x: auto;
+            border: 1px solid #3b82f6;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 6px;
+            margin: 10px 0;
+        }
+        .success {
+            background: rgba(34, 197, 94, 0.2);
+            border: 1px solid #22c55e;
+        }
+        .info {
+            background: rgba(59, 130, 246, 0.2);
+            border: 1px solid #3b82f6;
+        }
+        .query-item {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 6px;
+            border-left: 3px solid #3b82f6;
+        }
+        .favorite {
+            border-left-color: #fbbf24;
+        }
+        code {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 2px 6px;
+            border-radius: 3px;
+            color: #93c5fd;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Query History & Favorites Test</h1>
+
+    <div class="section">
+        <h2>1. Add Test Queries</h2>
+        <button onclick="addTestQuery('$[0:10]', 15.2, 10)">Add Query 1</button>
+        <button onclick="addTestQuery('$[?(@.brand.name == \"Toyota\")]', 23.5, 150)">Add Query 2</button>
+        <button onclick="addTestQuery('$[*].model', 18.7, 1000)">Add Query 3</button>
+        <button onclick="addTestQuery('$[-5:]', 12.3, 5)">Add Query 4</button>
+        <button onclick="addBulkQueries()">Add 10 Queries</button>
+        <div id="addStatus"></div>
+    </div>
+
+    <div class="section">
+        <h2>2. View History</h2>
+        <button onclick="viewHistory()">View All History</button>
+        <button onclick="viewFavorites()">View Favorites</button>
+        <div id="historyDisplay"></div>
+    </div>
+
+    <div class="section">
+        <h2>3. Test Favorites</h2>
+        <button onclick="toggleFirstFavorite()">Toggle First Item Favorite</button>
+        <button onclick="favoriteFirstThree()">Favorite First 3 Items</button>
+        <div id="favoriteStatus"></div>
+    </div>
+
+    <div class="section">
+        <h2>4. Test Search/Filter</h2>
+        <input type="text" id="searchInput" placeholder="Search queries..." style="width: 100%; padding: 10px; border-radius: 6px; background: rgba(0,0,0,0.3); border: 1px solid #3b82f6; color: white;">
+        <button onclick="searchQueries()">Search</button>
+        <div id="searchResults"></div>
+    </div>
+
+    <div class="section">
+        <h2>5. Test Persistence</h2>
+        <button onclick="checkPersistence()">Check localStorage</button>
+        <button onclick="exportData()">Export Data</button>
+        <div id="persistenceInfo"></div>
+    </div>
+
+    <div class="section">
+        <h2>6. Clear Data</h2>
+        <button class="danger" onclick="clearHistory()">Clear History</button>
+        <button class="danger" onclick="clearFavorites()">Clear Favorites</button>
+        <button class="danger" onclick="clearAll()">Clear All</button>
+        <div id="clearStatus"></div>
+    </div>
+
+    <div class="section">
+        <h2>7. LocalStorage Inspector</h2>
+        <button onclick="inspectStorage()">Inspect Storage</button>
+        <pre id="storageInspector" style="max-height: 300px; overflow-y: auto;"></pre>
+    </div>
+
+    <script>
+        // Utility functions matching the actual implementation
+        const STORAGE_KEYS = {
+            QUERY_HISTORY: 'jsonpathx_query_history',
+            FAVORITES: 'jsonpathx_favorites',
+        };
+
+        function generateQueryId() {
+            return `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+        }
+
+        function getQueryHistory() {
+            try {
+                const stored = localStorage.getItem(STORAGE_KEYS.QUERY_HISTORY);
+                return stored ? JSON.parse(stored) : [];
+            } catch (error) {
+                console.error('Error reading query history:', error);
+                return [];
+            }
+        }
+
+        function saveQueryHistory(history) {
+            try {
+                localStorage.setItem(STORAGE_KEYS.QUERY_HISTORY, JSON.stringify(history));
+                return true;
+            } catch (error) {
+                console.error('Error saving query history:', error);
+                return false;
+            }
+        }
+
+        function getFavorites() {
+            try {
+                const stored = localStorage.getItem(STORAGE_KEYS.FAVORITES);
+                return stored ? new Set(JSON.parse(stored)) : new Set();
+            } catch (error) {
+                console.error('Error reading favorites:', error);
+                return new Set();
+            }
+        }
+
+        function saveFavorites(favorites) {
+            try {
+                localStorage.setItem(STORAGE_KEYS.FAVORITES, JSON.stringify(Array.from(favorites)));
+                return true;
+            } catch (error) {
+                console.error('Error saving favorites:', error);
+                return false;
+            }
+        }
+
+        // Test functions
+        function addTestQuery(query, executionTime, resultCount) {
+            const history = getQueryHistory();
+            const newItem = {
+                id: generateQueryId(),
+                query: query,
+                timestamp: Date.now(),
+                executionTime: executionTime,
+                resultCount: resultCount,
+            };
+            history.unshift(newItem);
+            const limited = history.slice(0, 50);
+
+            if (saveQueryHistory(limited)) {
+                document.getElementById('addStatus').innerHTML =
+                    `<div class="status success">✅ Added query: <code>${query}</code> (${executionTime}ms, ${resultCount} results)</div>`;
+                viewHistory();
+            }
+        }
+
+        function addBulkQueries() {
+            const queries = [
+                ['$[0:100]', 20.5, 100],
+                ['$[?(@.price < 1000000)]', 45.2, 500],
+                ['$[*].brand.name', 15.8, 1000],
+                ['$..description', 30.2, 800],
+                ['$[?(@.itemCondition == "used")]', 25.5, 950],
+                ['$[0::100]', 18.3, 110],
+                ['$[-10:]', 10.2, 10],
+                ['$[?(@.brand.name == "Honda")]', 22.7, 200],
+                ['$[*]["@type"]', 14.5, 1000],
+                ['$[?(@.model)]', 28.9, 990],
+            ];
+
+            queries.forEach(([query, time, count]) => {
+                addTestQuery(query, time, count);
+            });
+
+            document.getElementById('addStatus').innerHTML =
+                `<div class="status success">✅ Added ${queries.length} test queries!</div>`;
+        }
+
+        function formatTimeAgo(timestamp) {
+            const seconds = Math.floor((Date.now() - timestamp) / 1000);
+            if (seconds < 60) return 'just now';
+            if (seconds < 3600) {
+                const minutes = Math.floor(seconds / 60);
+                return `${minutes} minute${minutes !== 1 ? 's' : ''} ago`;
+            }
+            if (seconds < 86400) {
+                const hours = Math.floor(seconds / 3600);
+                return `${hours} hour${hours !== 1 ? 's' : ''} ago`;
+            }
+            const days = Math.floor(seconds / 86400);
+            return `${days} day${days !== 1 ? 's' : ''} ago`;
+        }
+
+        function viewHistory() {
+            const history = getQueryHistory();
+            const favorites = getFavorites();
+
+            let html = `<div class="status info">📊 Total queries: ${history.length}/50</div>`;
+
+            history.forEach((item, index) => {
+                const isFav = favorites.has(item.id);
+                html += `
+                    <div class="query-item ${isFav ? 'favorite' : ''}">
+                        <div style="display: flex; justify-content: space-between; align-items: start;">
+                            <div style="flex: 1;">
+                                <code style="font-size: 13px;">${item.query}</code>
+                                <div style="font-size: 11px; color: #9ca3af; margin-top: 5px;">
+                                    ${isFav ? '⭐ ' : ''}
+                                    ${formatTimeAgo(item.timestamp)} •
+                                    <span style="color: #22c55e;">${item.executionTime?.toFixed(2) || 'N/A'}ms</span> •
+                                    <span style="color: #3b82f6;">${item.resultCount || 0} results</span>
+                                </div>
+                            </div>
+                            <div style="font-size: 11px; color: #6b7280;">#${index + 1}</div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            document.getElementById('historyDisplay').innerHTML = html;
+        }
+
+        function viewFavorites() {
+            const history = getQueryHistory();
+            const favorites = getFavorites();
+            const favoriteItems = history.filter(item => favorites.has(item.id));
+
+            let html = `<div class="status info">⭐ Favorite queries: ${favoriteItems.length}</div>`;
+
+            if (favoriteItems.length === 0) {
+                html += '<div class="query-item">No favorites yet. Click "Favorite First 3 Items" to add some!</div>';
+            } else {
+                favoriteItems.forEach((item, index) => {
+                    html += `
+                        <div class="query-item favorite">
+                            <div style="display: flex; justify-content: space-between; align-items: start;">
+                                <div style="flex: 1;">
+                                    <code style="font-size: 13px;">${item.query}</code>
+                                    <div style="font-size: 11px; color: #9ca3af; margin-top: 5px;">
+                                        ⭐ ${formatTimeAgo(item.timestamp)} •
+                                        <span style="color: #22c55e;">${item.executionTime?.toFixed(2) || 'N/A'}ms</span> •
+                                        <span style="color: #3b82f6;">${item.resultCount || 0} results</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+
+            document.getElementById('historyDisplay').innerHTML = html;
+        }
+
+        function toggleFirstFavorite() {
+            const history = getQueryHistory();
+            if (history.length === 0) {
+                document.getElementById('favoriteStatus').innerHTML =
+                    '<div class="status info">No queries in history. Add some first!</div>';
+                return;
+            }
+
+            const favorites = getFavorites();
+            const firstId = history[0].id;
+
+            if (favorites.has(firstId)) {
+                favorites.delete(firstId);
+            } else {
+                favorites.add(firstId);
+            }
+
+            saveFavorites(favorites);
+
+            document.getElementById('favoriteStatus').innerHTML =
+                `<div class="status success">✅ Toggled favorite for first query</div>`;
+            viewHistory();
+        }
+
+        function favoriteFirstThree() {
+            const history = getQueryHistory();
+            if (history.length < 3) {
+                document.getElementById('favoriteStatus').innerHTML =
+                    '<div class="status info">Need at least 3 queries. Add more first!</div>';
+                return;
+            }
+
+            const favorites = getFavorites();
+            history.slice(0, 3).forEach(item => favorites.add(item.id));
+
+            saveFavorites(favorites);
+
+            document.getElementById('favoriteStatus').innerHTML =
+                `<div class="status success">✅ Favorited first 3 queries</div>`;
+            viewHistory();
+        }
+
+        function searchQueries() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const history = getQueryHistory();
+            const favorites = getFavorites();
+
+            const filtered = history.filter(item =>
+                item.query.toLowerCase().includes(searchTerm)
+            );
+
+            let html = `<div class="status info">🔍 Found ${filtered.length} matching queries</div>`;
+
+            if (filtered.length === 0) {
+                html += '<div class="query-item">No queries match your search</div>';
+            } else {
+                filtered.forEach((item) => {
+                    const isFav = favorites.has(item.id);
+                    html += `
+                        <div class="query-item ${isFav ? 'favorite' : ''}">
+                            <code style="font-size: 13px;">${item.query}</code>
+                            <div style="font-size: 11px; color: #9ca3af; margin-top: 5px;">
+                                ${isFav ? '⭐ ' : ''}${formatTimeAgo(item.timestamp)}
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+
+            document.getElementById('searchResults').innerHTML = html;
+        }
+
+        function checkPersistence() {
+            const history = getQueryHistory();
+            const favorites = getFavorites();
+
+            const html = `
+                <div class="status success">
+                    <strong>✅ Persistence Check</strong><br>
+                    • History items: ${history.length}<br>
+                    • Favorite items: ${favorites.size}<br>
+                    • localStorage available: ${typeof(Storage) !== "undefined" ? "Yes" : "No"}<br>
+                    • Data will persist across page refresh: ${history.length > 0 ? "Yes" : "No data to persist"}
+                </div>
+            `;
+
+            document.getElementById('persistenceInfo').innerHTML = html;
+        }
+
+        function exportData() {
+            const history = getQueryHistory();
+            const favorites = Array.from(getFavorites());
+
+            const data = {
+                history: history,
+                favorites: favorites,
+                exportDate: new Date().toISOString(),
+                totalQueries: history.length,
+                totalFavorites: favorites.length,
+            };
+
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `jsonpathx-history-${Date.now()}.json`;
+            a.click();
+
+            document.getElementById('persistenceInfo').innerHTML =
+                '<div class="status success">✅ Data exported successfully!</div>';
+        }
+
+        function clearHistory() {
+            if (confirm('Are you sure you want to clear all query history?')) {
+                localStorage.removeItem(STORAGE_KEYS.QUERY_HISTORY);
+                document.getElementById('clearStatus').innerHTML =
+                    '<div class="status success">✅ History cleared</div>';
+                viewHistory();
+            }
+        }
+
+        function clearFavorites() {
+            if (confirm('Are you sure you want to clear all favorites?')) {
+                localStorage.removeItem(STORAGE_KEYS.FAVORITES);
+                document.getElementById('clearStatus').innerHTML =
+                    '<div class="status success">✅ Favorites cleared</div>';
+                viewHistory();
+            }
+        }
+
+        function clearAll() {
+            if (confirm('Are you sure you want to clear ALL data (history + favorites)?')) {
+                localStorage.removeItem(STORAGE_KEYS.QUERY_HISTORY);
+                localStorage.removeItem(STORAGE_KEYS.FAVORITES);
+                document.getElementById('clearStatus').innerHTML =
+                    '<div class="status success">✅ All data cleared</div>';
+                viewHistory();
+            }
+        }
+
+        function inspectStorage() {
+            const history = getQueryHistory();
+            const favorites = Array.from(getFavorites());
+
+            const data = {
+                'Storage Keys': STORAGE_KEYS,
+                'History (first 5)': history.slice(0, 5),
+                'Favorites': favorites,
+                'Total History Items': history.length,
+                'Total Favorites': favorites.length,
+                'Storage Size (approx)': new Blob([
+                    localStorage.getItem(STORAGE_KEYS.QUERY_HISTORY) || '',
+                    localStorage.getItem(STORAGE_KEYS.FAVORITES) || ''
+                ]).size + ' bytes'
+            };
+
+            document.getElementById('storageInspector').textContent =
+                JSON.stringify(data, null, 2);
+        }
+
+        // Auto-refresh on page load
+        window.onload = function() {
+            viewHistory();
+            checkPersistence();
+        };
+    </script>
+</body>
+</html>
