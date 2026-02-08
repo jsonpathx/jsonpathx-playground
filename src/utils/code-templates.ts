@@ -174,13 +174,13 @@ runQuery();{{ASYNC_END}}{{ERROR_HANDLING_START}}{{SYNC_ONLY}} catch (error) {
     <div id="results"></div>
   </div>
 
-  {{BROWSER_SCRIPT}}
-  <script>
+  <script type="module">
+    import { query as jsonpathQuery } from 'https://unpkg.com/@jsonpathx/jsonpathx@0.1.3?module';
     {{COMMENTS_START}}// Sample data for JSONPath query{{COMMENTS_END}}
     const data = {{DATA}};
 
     {{COMMENTS_START}}// JSONPath query to execute{{COMMENTS_END}}
-    const query = '{{QUERY}}';
+    const queryString = '{{QUERY}}';
 
     {{COMMENTS_START}}// Execute query and display results{{COMMENTS_END}}
     async function runQuery() {
@@ -192,16 +192,24 @@ runQuery();{{ASYNC_END}}{{ERROR_HANDLING_START}}{{SYNC_ONLY}} catch (error) {
 
         {{COMMENTS_START}}// Display results{{COMMENTS_END}}
         const resultCount = Array.isArray(results) ? results.length : 1;
-        resultsDiv.innerHTML = \`
-          <h2>Query Results (\${resultCount} item(s))</h2>
-          <pre>\${JSON.stringify(results, null, 2)}</pre>
-        \`;
+        resultsDiv.textContent = '';
+        const heading = document.createElement('h2');
+        heading.textContent = \`Query Results (\${resultCount} item(s))\`;
+        const pre = document.createElement('pre');
+        pre.textContent = JSON.stringify(results, null, 2);
+        resultsDiv.appendChild(heading);
+        resultsDiv.appendChild(pre);
       {{ERROR_HANDLING_START}}} catch (error) {
-        resultsDiv.innerHTML = \`
-          <div class="error">
-            <strong>Error:</strong> \${error.message}
-          </div>
-        \`;
+        resultsDiv.textContent = '';
+        const errorBox = document.createElement('div');
+        errorBox.className = 'error';
+        const errorLabel = document.createElement('strong');
+        errorLabel.textContent = 'Error: ';
+        const errorMessage = document.createElement('span');
+        errorMessage.textContent = error.message;
+        errorBox.appendChild(errorLabel);
+        errorBox.appendChild(errorMessage);
+        resultsDiv.appendChild(errorBox);
       }{{ERROR_HANDLING_END}}
     }
 
@@ -242,7 +250,7 @@ export function generateQueryExecution(language: string, useAsync: boolean): str
       return useAsync ? 'await query(query, data)' : 'query(query, data)';
 
     case 'browser':
-      return 'await query(query, data)';
+      return 'await jsonpathQuery(queryString, data)';
 
     default:
       return '';
@@ -253,13 +261,5 @@ export function generateQueryExecution(language: string, useAsync: boolean): str
  * Get CDN script tag for browser usage
  */
 export function getBrowserScriptTag(): string {
-  return `<!-- Option 1: Use CDN (if available) -->
-  <!-- <script src="https://unpkg.com/@jsonpathx/jsonpathx"></script> -->
-
-  <!-- Option 2: Use bundled version -->
-  <!-- Include your bundled jsonpathx library here -->
-  <script type="module">
-    import { query } from './path/to/jsonpathx.js';
-    window.jsonpathx = { query };
-  </script>`;
+  return '';
 }
