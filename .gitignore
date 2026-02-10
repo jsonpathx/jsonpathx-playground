@@ -35,3 +35,6 @@ verify.sh
 config.*
 
 !README.md
+
+package-lock.json
+yarn.lock

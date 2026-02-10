@@ -1,5 +1,5 @@
-import { useState, useCallback, useRef } from 'react';
-import { query } from '@jsonpathx/jsonpathx';
+import { useState, useCallback, useRef } from "react";
+import { query } from "@jsonpathx/jsonpathx";
 
 interface UseJsonPathResult {
   results: unknown[] | null;
@@ -21,7 +21,7 @@ export function useJsonPath(data: unknown): UseJsonPathResult {
   const execute = useCallback(
     (path: string) => {
       if (!data) {
-        setError('No data available');
+        setError("No data available");
         setResults(null);
         return;
       }
@@ -37,16 +37,31 @@ export function useJsonPath(data: unknown): UseJsonPathResult {
         const startTime = performance.now();
 
         try {
-          console.log('Executing query:', path);
-          console.log('Data type:', Array.isArray(data) ? 'Array' : typeof data);
-          console.log('Data length:', Array.isArray(data) ? data.length : 'N/A');
+          console.log("Executing query:", path);
+          console.log(
+            "Data type:",
+            Array.isArray(data) ? "Array" : typeof data,
+          );
+          console.log(
+            "Data length:",
+            Array.isArray(data) ? data.length : "N/A",
+          );
 
-          const queryResults = await query(path, data);
+          const needsEval = path.includes("[?(");
+          const queryResults = await query(
+            path,
+            data,
+            needsEval ? { eval: "native" } : undefined,
+          );
 
           const endTime = performance.now();
 
-          console.log('Query completed in', (endTime - startTime).toFixed(2), 'ms');
-          console.log('Results:', queryResults);
+          console.log(
+            "Query completed in",
+            (endTime - startTime).toFixed(2),
+            "ms",
+          );
+          console.log("Results:", queryResults);
 
           // Only update if this is still the latest execution
           if (currentExecutionId === executionIdRef.current) {
@@ -61,7 +76,7 @@ export function useJsonPath(data: unknown): UseJsonPathResult {
               normalizedResults = [queryResults];
             }
 
-            console.log('Normalized results count:', normalizedResults.length);
+            console.log("Normalized results count:", normalizedResults.length);
 
             setResults(normalizedResults);
             setExecutionTime(endTime - startTime);
@@ -71,8 +86,9 @@ export function useJsonPath(data: unknown): UseJsonPathResult {
         } catch (err) {
           // Only update if this is still the latest execution
           if (currentExecutionId === executionIdRef.current) {
-            console.error('JSONPath execution error:', err);
-            const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
+            console.error("JSONPath execution error:", err);
+            const errorMessage =
+              err instanceof Error ? err.message : "Unknown error occurred";
             setError(errorMessage);
             setResults(null);
             setExecutionTime(null);
@@ -81,7 +97,7 @@ export function useJsonPath(data: unknown): UseJsonPathResult {
         }
       }, 0);
     },
-    [data]
+    [data],
   );
 
   return {
