@@ -1,0 +1,63 @@
+# Dependabot version updates.
+#
+# Security updates are switched on in the repository settings and run as
+# soon as an advisory appears, independent of the schedules here. The
+# ignore rules and the commit prefix of the first npm entry apply to them
+# too. Version updates run on the schedules below, grouped so that each run
+# opens only a few PRs.
+version: 2
+updates:
+  - package-ecosystem: npm
+    # Single package (no workspaces).
+    directory: /
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 3
+    # Keep exact pins exact.
+    versioning-strategy: increase
+    commit-message:
+      prefix: deps
+    groups:
+      # All dev-dependency minor and patch updates in one PR.
+      dev-dependencies:
+        dependency-type: development
+        update-types: [minor, patch]
+      # All runtime-dependency minor and patch updates in one PR.
+      production-dependencies:
+        dependency-type: production
+        update-types: [minor, patch]
+      # Major updates separately, together in one PR, so they can be
+      # reviewed (or closed) as a set.
+      major-updates:
+        update-types: [major]
+    ignore:
+      # The library pin is bumped by the weekly entry below, not here.
+      - dependency-name: "@jsonpathx/jsonpathx"
+
+  # Weekly: only the published library (exact pin). After a release this
+  # opens a PR that bumps the pin and the lockfile; the demo is then updated
+  # in that PR.
+  #
+  # Dependabot allows one entry per ecosystem, directory and target branch.
+  # Naming the default branch explicitly makes this a second npm entry for
+  # "/" (workaround from dependabot/dependabot-core#1778). Because it sets
+  # target-branch, its options do not apply to security updates; those keep
+  # using the monthly entry above.
+  #
+  # The pin is a stable version, so Dependabot offers newer stable releases
+  # only and skips prereleases.
+  - package-ecosystem: npm
+    directory: /
+    target-branch: main
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 2
+    versioning-strategy: increase
+    allow:
+      - dependency-name: "@jsonpathx/jsonpathx"
+    commit-message:
+      prefix: deps
+
+# No github-actions entry: this repository has no workflows yet. Add one
+# (same as the other repos) together with the first workflow.
