@@ -1,11 +1,21 @@
 import { useState, useCallback, useRef } from "react";
-import { query } from "@jsonpathx/jsonpathx";
+import { query, type QueryOptions } from "@jsonpathx/jsonpathx";
+
+const QUERY_OPTIONS: QueryOptions = { filterMode: "rfc" };
+
+/** The last successful run: its query, time and result count, set together with the results. */
+export interface QueryRun {
+  query: string;
+  executionTime: number;
+  resultCount: number;
+}
 
 interface UseJsonPathResult {
   results: unknown[] | null;
   error: string | null;
   isExecuting: boolean;
   executionTime: number | null;
+  lastRun: QueryRun | null;
   execute: (path: string) => void;
 }
 
@@ -14,6 +24,7 @@ export function useJsonPath(data: unknown): UseJsonPathResult {
   const [error, setError] = useState<string | null>(null);
   const [isExecuting, setIsExecuting] = useState(false);
   const [executionTime, setExecutionTime] = useState<number | null>(null);
+  const [lastRun, setLastRun] = useState<QueryRun | null>(null);
 
   // Use ref to track the latest execution to avoid race conditions
   const executionIdRef = useRef(0);
@@ -37,31 +48,13 @@ export function useJsonPath(data: unknown): UseJsonPathResult {
         const startTime = performance.now();
 
         try {
-          console.log("Executing query:", path);
-          console.log(
-            "Data type:",
-            Array.isArray(data) ? "Array" : typeof data,
-          );
-          console.log(
-            "Data length:",
-            Array.isArray(data) ? data.length : "N/A",
-          );
-
-          const needsEval = path.includes("[?(");
-          const queryResults = await query(
-            path,
-            data,
-            needsEval ? { eval: "native" } : undefined,
-          );
+          // Filters run in RFC 9535 mode, which evaluates them without
+          // eval/new Function, so they work under the page's CSP
+          // (script-src 'self'). It accepts both `[?@.a == 1]` and the
+          // jsonpath-plus style `[?(@.a == 1)]`.
+          const queryResults = await query(path, data, QUERY_OPTIONS);
 
           const endTime = performance.now();
-
-          console.log(
-            "Query completed in",
-            (endTime - startTime).toFixed(2),
-            "ms",
-          );
-          console.log("Results:", queryResults);
 
           // Only update if this is still the latest execution
           if (currentExecutionId === executionIdRef.current) {
@@ -76,17 +69,15 @@ export function useJsonPath(data: unknown): UseJsonPathResult {
               normalizedResults = [queryResults];
             }
 
-            console.log("Normalized results count:", normalizedResults.length);
-
             setResults(normalizedResults);
             setExecutionTime(endTime - startTime);
+            setLastRun({ query: path, executionTime: endTime - startTime, resultCount: normalizedResults.length });
             setError(null);
             setIsExecuting(false);
           }
         } catch (err) {
           // Only update if this is still the latest execution
           if (currentExecutionId === executionIdRef.current) {
-            console.error("JSONPath execution error:", err);
             const errorMessage =
               err instanceof Error ? err.message : "Unknown error occurred";
             setError(errorMessage);
@@ -105,6 +96,7 @@ export function useJsonPath(data: unknown): UseJsonPathResult {
     error,
     isExecuting,
     executionTime,
+    lastRun,
     execute,
   };
 }

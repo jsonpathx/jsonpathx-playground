@@ -8,7 +8,6 @@ export interface LanguageTemplate {
   language: SupportedLanguage;
   install: string;
   installCommand?: string;
-  template: string;
   extension: string;
   description: string;
   supportsAsync: boolean;

@@ -3,7 +3,7 @@
  * Utilities for file upload, validation, and processing
  */
 
-import { FileValidationResult } from '../types/dataset';
+import type { FileValidationResult } from '../types/dataset';
 
 const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB hard limit
 const LARGE_FILE_WARNING = 50 * 1024 * 1024; // 50MB warning threshold

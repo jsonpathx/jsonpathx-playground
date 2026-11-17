@@ -4,7 +4,8 @@
  */
 
 import { useState, useRef, useEffect } from 'react';
-import { DatasetMetadata } from '../types/dataset';
+import type { DatasetMetadata } from '../types/dataset';
+import { FULL_DATASET_ID, SAMPLE_DATASET_ID } from '../hooks/useDatasetManager';
 
 interface DatasetSelectorProps {
   datasets: DatasetMetadata[];
@@ -114,13 +115,18 @@ export default function DatasetSelector({
                         <div className="font-medium text-gray-900 dark:text-white truncate">
                           {dataset.name}
                         </div>
-                        {dataset.isDefault && (
-                          <span className="text-xs px-2 py-0.5 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded">
+                        {dataset.id === SAMPLE_DATASET_ID && (
+                          <span className="text-xs px-2 py-0.5 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-sm">
                             Default
                           </span>
                         )}
+                        {dataset.id === FULL_DATASET_ID && (
+                          <span className="text-xs px-2 py-0.5 bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-200 rounded-sm">
+                            Large
+                          </span>
+                        )}
                         {!dataset.isPersisted && !dataset.isDefault && (
-                          <span className="text-xs px-2 py-0.5 bg-yellow-200 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 rounded">
+                          <span className="text-xs px-2 py-0.5 bg-yellow-200 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 rounded-sm">
                             Session Only
                           </span>
                         )}
@@ -129,14 +135,14 @@ export default function DatasetSelector({
                         {dataset.itemCount.toLocaleString()} items · {dataset.sizeFormatted}
                       </div>
                       {!dataset.isDefault && (
-                        <div className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                        <div className="text-xs text-gray-400 dark:text-gray-400 mt-0.5">
                           Uploaded {new Date(dataset.uploadedAt).toLocaleDateString()}
                         </div>
                       )}
                     </div>
                     {dataset.id === currentDatasetId && (
                       <svg
-                        className="w-5 h-5 text-blue-500 flex-shrink-0"
+                        className="w-5 h-5 text-blue-500 shrink-0"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -162,7 +168,7 @@ export default function DatasetSelector({
                 onUploadClick();
                 setIsOpen(false);
               }}
-              className="w-full px-4 py-2 text-left text-sm font-medium text-blue-600 dark:text-blue-400 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center space-x-2"
+              className="w-full px-4 py-2 text-left text-sm font-medium text-blue-700 dark:text-blue-400 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center space-x-2"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path

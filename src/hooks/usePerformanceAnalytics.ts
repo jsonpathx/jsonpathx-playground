@@ -3,7 +3,7 @@
  */
 
 import { useState, useCallback, useEffect, useMemo } from 'react';
-import {
+import type {
   QueryMetrics,
   PerformanceAnalytics,
   ExportFormat,

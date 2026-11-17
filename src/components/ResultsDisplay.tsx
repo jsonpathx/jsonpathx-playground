@@ -34,22 +34,18 @@ const ResultsDisplay = ({ results, isExecuting, error, executionTime, query, dat
     []
   );
 
-  // Handle search term changes with debouncing
-  useEffect(() => {
-    if (searchTerm) {
-      setIsSearching(true);
-      debouncedSearch(searchTerm);
-    } else {
-      setDebouncedSearchTerm('');
-      setIsSearching(false);
-    }
-  }, [searchTerm, debouncedSearch]);
+  // Drop a pending debounced search when the component unmounts.
+  useEffect(() => () => debouncedSearch.cancel(), [debouncedSearch]);
 
-  // Clear search when results change
-  useEffect(() => {
+  // Clear the search when new results arrive (adjusting state during render,
+  // instead of in an effect, avoids an extra render pass).
+  const [prevResults, setPrevResults] = useState(results);
+  if (results !== prevResults) {
+    setPrevResults(results);
     setSearchTerm('');
     setDebouncedSearchTerm('');
-  }, [results]);
+    setIsSearching(false);
+  }
 
   // Filter results based on search
   const filteredResults = useMemo(() => {
@@ -103,7 +99,6 @@ const ResultsDisplay = ({ results, isExecuting, error, executionTime, query, dat
           )
         : formattedResults;
       await navigator.clipboard.writeText(textToCopy);
-      console.log('Copied to clipboard!');
     } catch (err) {
       console.error('Failed to copy:', err);
     }
@@ -146,23 +141,34 @@ const ResultsDisplay = ({ results, isExecuting, error, executionTime, query, dat
   };
 
   const handleClearSearch = useCallback(() => {
+    debouncedSearch.cancel();
     setSearchTerm('');
     setDebouncedSearchTerm('');
+    setIsSearching(false);
     if (searchInputRef.current) {
       searchInputRef.current.focus();
     }
-  }, []);
+  }, [debouncedSearch]);
 
   const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value);
-  }, []);
+    const term = e.target.value;
+    setSearchTerm(term);
+    if (term) {
+      setIsSearching(true);
+      debouncedSearch(term);
+    } else {
+      debouncedSearch.cancel();
+      setDebouncedSearchTerm('');
+      setIsSearching(false);
+    }
+  }, [debouncedSearch]);
 
   const toggleCaseSensitive = useCallback(() => {
     setCaseSensitive((prev) => !prev);
   }, []);
 
   return (
-    <div className="bg-white/80 dark:bg-gray-800/50 backdrop-blur-sm rounded-lg border border-gray-300 dark:border-gray-700 shadow-xl transition-colors duration-300">
+    <div className="bg-white/80 dark:bg-gray-800/50 backdrop-blur-xs rounded-lg border border-gray-300 dark:border-gray-700 shadow-xl transition-colors duration-300">
       {/* Header */}
       <div className="border-b border-gray-200 dark:border-gray-700 p-4 transition-colors duration-300">
         <div className="flex items-center justify-between mb-3">
@@ -175,14 +181,14 @@ const ResultsDisplay = ({ results, isExecuting, error, executionTime, query, dat
           <div className="flex items-center space-x-2">
             <button
               onClick={() => setViewMode(viewMode === 'pretty' ? 'compact' : 'pretty')}
-              className="px-3 py-1 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-900 dark:text-white text-xs rounded transition-colors"
+              className="px-3 py-1 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-900 dark:text-white text-xs rounded-sm transition-colors"
               title={viewMode === 'pretty' ? 'Switch to compact view' : 'Switch to pretty view'}
             >
               {viewMode === 'pretty' ? '{ }' : '≡'}
             </button>
             <button
               onClick={copyToClipboard}
-              className="px-3 py-1 bg-blue-600 hover:bg-blue-500 text-white text-xs rounded transition-colors"
+              className="px-3 py-1 bg-blue-600 hover:bg-blue-500 text-white text-xs rounded-sm transition-colors"
               title="Copy to clipboard"
               disabled={!results || results.length === 0}
             >
@@ -190,7 +196,7 @@ const ResultsDisplay = ({ results, isExecuting, error, executionTime, query, dat
             </button>
             <button
               onClick={downloadResults}
-              className="px-3 py-1 bg-green-600 hover:bg-green-500 text-white text-xs rounded transition-colors"
+              className="px-3 py-1 bg-green-700 hover:bg-green-600 text-white text-xs rounded-sm transition-colors"
               title="Download as JSON"
               disabled={!results || results.length === 0}
             >
@@ -198,7 +204,7 @@ const ResultsDisplay = ({ results, isExecuting, error, executionTime, query, dat
             </button>
             <button
               onClick={exportCsv}
-              className="px-3 py-1 bg-purple-600 hover:bg-purple-500 text-white text-xs rounded transition-colors"
+              className="px-3 py-1 bg-purple-600 hover:bg-purple-500 text-white text-xs rounded-sm transition-colors"
               title="Export as CSV"
               disabled={!results || results.length === 0}
             >
@@ -206,7 +212,7 @@ const ResultsDisplay = ({ results, isExecuting, error, executionTime, query, dat
             </button>
             <button
               onClick={() => setShowCodeGenerator(true)}
-              className="px-3 py-1 bg-indigo-600 hover:bg-indigo-500 text-white text-xs rounded transition-colors"
+              className="px-3 py-1 bg-indigo-600 hover:bg-indigo-500 text-white text-xs rounded-sm transition-colors"
               title="Generate code in multiple languages"
               disabled={!results || results.length === 0}
             >
@@ -222,11 +228,14 @@ const ResultsDisplay = ({ results, isExecuting, error, executionTime, query, dat
               <div className="relative flex-1">
                 <input
                   ref={searchInputRef}
-                  type="text"
+                  id="results-search"
+                  name="results-search"
+                  aria-label="Search within results"
+                  type="search"
                   value={searchTerm}
                   onChange={handleSearchChange}
                   placeholder="Search within results... (recursive full-text search)"
-                  className="w-full px-3 py-2 pl-10 pr-10 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white text-sm rounded border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-500 dark:placeholder-gray-400 transition-colors duration-300"
+                  className="w-full px-3 py-2 pl-10 pr-10 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white text-sm rounded-sm border border-gray-300 dark:border-gray-600 focus:outline-hidden focus:ring-2 focus:ring-blue-500 placeholder-gray-500 dark:placeholder-gray-400 transition-colors duration-300"
                 />
                 <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-400 transition-colors duration-300">
                   {isSearching ? (
@@ -283,7 +292,7 @@ const ResultsDisplay = ({ results, isExecuting, error, executionTime, query, dat
             {debouncedSearchTerm && resultStats && (
               <div className="mt-2 flex items-center text-xs">
                 <span className="text-gray-600 dark:text-gray-400 transition-colors duration-300">Search Results:</span>
-                <span className="ml-2 font-semibold text-blue-600 dark:text-blue-400 transition-colors duration-300">
+                <span className="ml-2 font-semibold text-blue-700 dark:text-blue-400 transition-colors duration-300">
                   {resultStats.filtered} of {resultStats.total}
                 </span>
                 {resultStats.filtered === 0 && (
@@ -301,7 +310,7 @@ const ResultsDisplay = ({ results, isExecuting, error, executionTime, query, dat
               <span className="text-gray-600 dark:text-gray-400 mr-2 transition-colors duration-300">
                 {resultStats.isFiltered ? 'Filtered:' : 'Total Results:'}
               </span>
-              <span className="font-semibold text-blue-600 dark:text-blue-400 transition-colors duration-300">
+              <span className="font-semibold text-blue-700 dark:text-blue-400 transition-colors duration-300">
                 {resultStats.isFiltered
                   ? `${resultStats.filtered.toLocaleString()} / ${resultStats.total.toLocaleString()}`
                   : resultStats.total.toLocaleString()}
@@ -318,7 +327,7 @@ const ResultsDisplay = ({ results, isExecuting, error, executionTime, query, dat
             {executionTime !== null && (
               <div className="flex items-center">
                 <span className="text-gray-600 dark:text-gray-400 mr-2 transition-colors duration-300">Time:</span>
-                <span className="font-semibold text-green-600 dark:text-green-400 transition-colors duration-300">{executionTime.toFixed(2)}ms</span>
+                <span className="font-semibold text-green-700 dark:text-green-400 transition-colors duration-300">{executionTime.toFixed(2)}ms</span>
               </div>
             )}
           </div>
@@ -329,9 +338,9 @@ const ResultsDisplay = ({ results, isExecuting, error, executionTime, query, dat
           <div className="mt-2 flex items-center space-x-4 text-xs">
             <span className="text-gray-600 dark:text-gray-400 transition-colors duration-300">Types:</span>
             {Array.from(resultStats.types.entries()).map(([type, count]) => (
-              <span key={type} className="bg-gray-200 dark:bg-gray-700 px-2 py-1 rounded transition-colors duration-300">
+              <span key={type} className="bg-gray-200 dark:bg-gray-700 px-2 py-1 rounded-sm transition-colors duration-300">
                 <span className="text-gray-700 dark:text-gray-300 transition-colors duration-300">{type}</span>
-                <span className="text-gray-500 ml-1">({count})</span>
+                <span className="text-gray-600 dark:text-gray-300 ml-1">({count})</span>
               </span>
             ))}
           </div>
@@ -340,11 +349,13 @@ const ResultsDisplay = ({ results, isExecuting, error, executionTime, query, dat
         {/* Max Results Selector */}
         {results && results.length > 100 && (
           <div className="mt-3 flex items-center space-x-2">
-            <label className="text-xs text-gray-600 dark:text-gray-400 transition-colors duration-300">Display limit:</label>
+            <label htmlFor="results-limit" className="text-xs text-gray-600 dark:text-gray-400 transition-colors duration-300">Display limit:</label>
             <select
+              id="results-limit"
+              name="results-limit"
               value={maxResults}
               onChange={(e) => setMaxResults(Number(e.target.value))}
-              className="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white text-xs rounded border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-300"
+              className="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white text-xs rounded-sm border border-gray-300 dark:border-gray-600 focus:outline-hidden focus:ring-2 focus:ring-blue-500 transition-colors duration-300"
             >
               <option value={10}>10</option>
               <option value={50}>50</option>
@@ -379,7 +390,7 @@ const ResultsDisplay = ({ results, isExecuting, error, executionTime, query, dat
           <div className="text-center py-16 text-gray-600 dark:text-gray-400 transition-colors duration-300">
             <div className="text-4xl mb-3">∅</div>
             <p className="text-sm">No results found for query:</p>
-            <code className="text-xs bg-gray-200 dark:bg-gray-700 px-3 py-1 rounded mt-2 inline-block font-mono transition-colors duration-300">
+            <code className="text-xs bg-gray-200 dark:bg-gray-700 px-3 py-1 rounded-sm mt-2 inline-block font-mono transition-colors duration-300">
               {query}
             </code>
           </div>
@@ -387,33 +398,18 @@ const ResultsDisplay = ({ results, isExecuting, error, executionTime, query, dat
           <div className="text-center py-16 text-gray-600 dark:text-gray-400 transition-colors duration-300">
             <div className="text-4xl mb-3">🔎</div>
             <p className="text-sm">No results match your search:</p>
-            <code className="text-xs bg-gray-200 dark:bg-gray-700 px-3 py-1 rounded mt-2 inline-block font-mono transition-colors duration-300">
+            <code className="text-xs bg-gray-200 dark:bg-gray-700 px-3 py-1 rounded-sm mt-2 inline-block font-mono transition-colors duration-300">
               {debouncedSearchTerm}
             </code>
             <button
               onClick={handleClearSearch}
-              className="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm rounded transition-colors"
+              className="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm rounded-sm transition-colors"
             >
               Clear Search
             </button>
           </div>
         ) : (
           <div className="relative">
-            <style>
-              {`
-                .search-highlight {
-                  background-color: rgb(250, 204, 21);
-                  color: rgb(17, 24, 39);
-                  font-weight: 600;
-                  padding: 0 2px;
-                  border-radius: 2px;
-                }
-                .dark .search-highlight {
-                  background-color: rgb(250, 204, 21);
-                  color: rgb(17, 24, 39);
-                }
-              `}
-            </style>
             <pre className="bg-gray-100 dark:bg-gray-900 rounded-lg p-4 overflow-x-auto text-sm text-gray-900 dark:text-gray-300 font-mono max-h-[600px] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-400 dark:scrollbar-thumb-gray-700 scrollbar-track-gray-200 dark:scrollbar-track-gray-900 transition-colors duration-300">
               {debouncedSearchTerm ? (
                 <code dangerouslySetInnerHTML={{ __html: formattedResults }} />

@@ -201,7 +201,7 @@ export function exportResultsToCsv(
     }
   } catch (error) {
     console.error('Failed to export CSV:', error);
-    throw new Error('Failed to export results to CSV. Please try again.');
+    throw new Error('Failed to export results to CSV. Please try again.', { cause: error });
   }
 }
 

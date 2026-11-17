@@ -107,7 +107,7 @@ const ExampleQueries = ({ onExampleClick, currentQuery }: ExampleQueriesProps) =
   const categories = Array.from(new Set(EXAMPLES.map((ex) => ex.category)));
 
   return (
-    <div className="bg-white/80 dark:bg-gray-800/50 backdrop-blur-sm rounded-lg border border-gray-300 dark:border-gray-700 p-6 shadow-xl transition-colors duration-300">
+    <div className="bg-white/80 dark:bg-gray-800/50 backdrop-blur-xs rounded-lg border border-gray-300 dark:border-gray-700 p-6 shadow-xl transition-colors duration-300">
       <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center transition-colors duration-300">
         <span className="mr-2">📚</span>
         Example Queries
@@ -116,7 +116,7 @@ const ExampleQueries = ({ onExampleClick, currentQuery }: ExampleQueriesProps) =
       <div className="space-y-4">
         {categories.map((category) => (
           <div key={category}>
-            <h3 className="text-sm font-semibold text-blue-600 dark:text-blue-400 mb-2 uppercase tracking-wide transition-colors duration-300">
+            <h3 className="text-sm font-semibold text-blue-700 dark:text-blue-400 mb-2 uppercase tracking-wide transition-colors duration-300">
               {category}
             </h3>
             <div className="space-y-2">
@@ -135,11 +135,11 @@ const ExampleQueries = ({ onExampleClick, currentQuery }: ExampleQueriesProps) =
                     <div className="flex items-start justify-between mb-1">
                       <div className={`font-medium text-sm ${isActive ? 'text-white' : 'text-gray-900 dark:text-white'} transition-colors duration-300`}>{example.title}</div>
                       {isActive && (
-                        <span className="text-xs bg-blue-500 px-2 py-0.5 rounded-full text-white">Active</span>
+                        <span className="text-xs bg-blue-700 px-2 py-0.5 rounded-full text-white">Active</span>
                       )}
                     </div>
-                    <div className={`text-xs mb-2 ${isActive ? 'text-blue-100' : 'text-gray-600 dark:text-gray-400'} transition-colors duration-300`}>{example.description}</div>
-                    <code className={`text-xs font-mono px-2 py-1 rounded block overflow-x-auto ${isActive ? 'text-blue-100 bg-blue-700/50' : 'text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-gray-900/50'} transition-colors duration-300`}>
+                    <div className={`text-xs mb-2 ${isActive ? 'text-white' : 'text-gray-600 dark:text-gray-400'} transition-colors duration-300`}>{example.description}</div>
+                    <code className={`text-xs font-mono px-2 py-1 rounded-sm block overflow-x-auto ${isActive ? 'text-blue-100 bg-blue-700/50' : 'text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-gray-900/50'} transition-colors duration-300`}>
                       {example.query}
                     </code>
                   </button>
@@ -155,8 +155,8 @@ const ExampleQueries = ({ onExampleClick, currentQuery }: ExampleQueriesProps) =
           <div className="font-semibold text-gray-700 dark:text-gray-300 mb-2 transition-colors duration-300">🎯 Pro Tips:</div>
           <ul className="space-y-1 list-disc list-inside">
             <li>Start with simple queries and build complexity</li>
-            <li>Use filters with <code className="bg-gray-200 dark:bg-gray-700 px-1 rounded transition-colors duration-300">?(@.prop)</code></li>
-            <li>Combine conditions with <code className="bg-gray-200 dark:bg-gray-700 px-1 rounded transition-colors duration-300">&&</code> and <code className="bg-gray-200 dark:bg-gray-700 px-1 rounded transition-colors duration-300">||</code></li>
+            <li>Use filters with <code className="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-100 px-1 rounded-sm transition-colors duration-300">?(@.prop)</code></li>
+            <li>Combine conditions with <code className="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-100 px-1 rounded-sm transition-colors duration-300">&&</code> and <code className="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-100 px-1 rounded-sm transition-colors duration-300">||</code></li>
             <li>Test performance with different dataset sizes</li>
           </ul>
         </div>

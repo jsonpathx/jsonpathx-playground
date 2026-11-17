@@ -107,7 +107,7 @@ const KeyboardShortcutsHelp = ({ isOpen, onClose }: KeyboardShortcutsHelpProps) 
   // Render the modal using a portal
   return createPortal(
     <div
-      className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fadeIn"
+      className="fixed inset-0 z-9999 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-fadeIn"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
@@ -155,7 +155,7 @@ const KeyboardShortcutsHelp = ({ isOpen, onClose }: KeyboardShortcutsHelpProps) 
         <div className="px-6 py-6 space-y-6">
           {categories.map((category) => (
             <div key={category}>
-              <h3 className="text-lg font-semibold text-blue-600 dark:text-blue-400 mb-3 uppercase tracking-wide text-sm">
+              <h3 className="text-lg font-semibold text-blue-700 dark:text-blue-400 mb-3 uppercase tracking-wide text-sm">
                 {category}
               </h3>
               <div className="space-y-2">
@@ -170,7 +170,7 @@ const KeyboardShortcutsHelp = ({ isOpen, onClose }: KeyboardShortcutsHelpProps) 
                     <div className="flex items-center space-x-1">
                       {shortcut.keys.map((key, keyIndex) => (
                         <div key={keyIndex} className="flex items-center">
-                          <kbd className="px-3 py-1.5 text-xs font-semibold text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded shadow-sm min-w-[2rem] text-center">
+                          <kbd className="px-3 py-1.5 text-xs font-semibold text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-sm shadow-xs min-w-8 text-center">
                             {key}
                           </kbd>
                           {keyIndex < shortcut.keys.length - 1 && (
@@ -192,11 +192,11 @@ const KeyboardShortcutsHelp = ({ isOpen, onClose }: KeyboardShortcutsHelpProps) 
         <div className="sticky bottom-0 bg-gray-50 dark:bg-gray-900/50 border-t border-gray-200 dark:border-gray-700 px-6 py-4">
           <div className="flex items-center justify-between">
             <p className="text-xs text-gray-600 dark:text-gray-400">
-              Tip: Press <kbd className="px-2 py-1 text-xs font-semibold text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded">Escape</kbd> to close this modal
+              Tip: Press <kbd className="px-2 py-1 text-xs font-semibold text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-sm">Escape</kbd> to close this modal
             </p>
             <button
               onClick={onClose}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
             >
               Got it
             </button>

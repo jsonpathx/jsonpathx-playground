@@ -15,7 +15,7 @@ const HighlightedText = ({
   text,
   searchTerm,
   caseSensitive = false,
-  highlightClassName = 'bg-yellow-400 text-gray-900 font-semibold px-0.5 rounded',
+  highlightClassName = 'bg-yellow-400 text-gray-900 font-semibold px-0.5 rounded-sm',
 }: HighlightedTextProps) => {
   const segments = useMemo(
     () => highlightText(text, searchTerm, caseSensitive),

@@ -1,4 +1,4 @@
-import { FilterCondition, LogicalOperator } from '../../types/query-builder';
+import type { FilterCondition, LogicalOperator } from '../../types/query-builder';
 import { OperatorSelector, LogicalOperatorSelector } from './OperatorSelector';
 
 interface FilterBuilderProps {
@@ -97,7 +97,7 @@ const FilterBuilder = ({ filters, onFiltersChange, availableFields }: FilterBuil
                     <select
                       value={filter.property}
                       onChange={(e) => updateFilter(filter.id, { property: e.target.value })}
-                      className="w-full px-2 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                      className="w-full px-2 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-sm text-sm text-gray-900 dark:text-gray-100 focus:outline-hidden focus:ring-2 focus:ring-blue-500 transition-colors"
                     >
                       {availableFields.length === 0 ? (
                         <option>No fields</option>
@@ -134,7 +134,7 @@ const FilterBuilder = ({ filters, onFiltersChange, availableFields }: FilterBuil
                       onChange={(e) => updateFilter(filter.id, { value: e.target.value })}
                       disabled={filter.operator === 'exists'}
                       placeholder={filter.operator === 'exists' ? 'N/A' : 'Enter value...'}
-                      className="w-full px-2 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors disabled:bg-gray-100 dark:disabled:bg-gray-900 disabled:cursor-not-allowed"
+                      className="w-full px-2 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-sm text-sm text-gray-900 dark:text-gray-100 focus:outline-hidden focus:ring-2 focus:ring-blue-500 transition-colors disabled:bg-gray-100 dark:disabled:bg-gray-900 disabled:cursor-not-allowed"
                     />
                   </div>
                 </div>
@@ -143,7 +143,7 @@ const FilterBuilder = ({ filters, onFiltersChange, availableFields }: FilterBuil
                 <div className="mt-2 pt-2 border-t border-gray-200 dark:border-gray-700">
                   <div className="text-xs text-gray-500 dark:text-gray-400">
                     <span className="font-semibold">Preview:</span>{' '}
-                    <code className="bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded font-mono">
+                    <code className="bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded-sm font-mono">
                       @.{filter.property} {filter.operator}{' '}
                       {filter.operator !== 'exists' && `'${filter.value}'`}
                     </code>
