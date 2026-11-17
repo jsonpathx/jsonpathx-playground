@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Typecheck, lint, build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 26
+          cache: npm
+      - run: npm ci
+      - name: Typecheck
+        run: npx tsc --noEmit
+      # Errors fail the job; warnings are reported but allowed for now.
+      # `npm run lint` adds --max-warnings 0, and the 7 existing warnings
+      # (react-hooks/exhaustive-deps, no-explicit-any, react-refresh) need
+      # behaviour or typing changes that belong to the stack update.
+      - name: Lint
+        run: npx eslint . --ext ts,tsx --report-unused-disable-directives
+      - run: npm run build
+
+  ci:
+    # The single required check: green only when every job above is.
+    name: CI
+    if: always()
+    needs: [check]
+    runs-on: ubuntu-latest
+    steps:
+      - name: All jobs passed
+        if: ${{ needs.check.result != 'success' }}
+        run: exit 1
+      - run: echo "All checks passed."

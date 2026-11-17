@@ -225,7 +225,7 @@ export function parseJsonPathQuery(query: string): {
   const filters: FilterCondition[] = [];
   let hasArraySlice = false;
   let recursiveDescent = false;
-  let rootPath = '$';
+  const rootPath = '$';
 
   // Check for recursive descent
   if (query.includes('..')) {
@@ -326,7 +326,7 @@ export function isValidJsonPath(query: string): boolean {
   }
 
   // Check for balanced brackets
-  const brackets = query.match(/[\[\]()]/g) || [];
+  const brackets = query.match(/[[\]()]/g) || [];
   let depth = 0;
   for (const bracket of brackets) {
     if (bracket === '[' || bracket === '(') depth++;
