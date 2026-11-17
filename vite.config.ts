@@ -1,70 +1,23 @@
-import { defineConfig } from 'vite';
+import { readFileSync } from 'node:fs';
+import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
-import wasm from 'vite-plugin-wasm';
-import topLevelAwait from 'vite-plugin-top-level-await';
-import path from 'path';
-import { nodePolyfillsPlugin } from './src/utils/vite-plugin-node-polyfills';
-import { wasmMimePlugin } from './src/utils/vite-plugin-wasm-mime';
+import { defineConfig } from 'vitest/config';
 
-// https://vitejs.dev/config/
+// `vite preview` serves the same security headers as Vercel (vercel.json), so
+// the Content-Security-Policy is exercised locally before a deploy.
+const vercel = JSON.parse(readFileSync(new URL('./vercel.json', import.meta.url), 'utf8')) as {
+  headers: Array<{ headers: Array<{ key: string; value: string }> }>;
+};
+const headers = Object.fromEntries(vercel.headers.flatMap((h) => h.headers.map(({ key, value }) => [key, value])));
+
 export default defineConfig({
-  plugins: [
-    wasmMimePlugin(),
-    nodePolyfillsPlugin(),
-    react(),
-    wasm(),
-    topLevelAwait(),
-  ],
-  server: {
-    port: 3000,
-    open: true,
-    fs: {
-      allow: ['..'],
-    },
-    headers: {
-      'Cross-Origin-Embedder-Policy': 'require-corp',
-      'Cross-Origin-Opener-Policy': 'same-origin',
-    },
-  },
-  preview: {
-    headers: {
-      'Cross-Origin-Embedder-Policy': 'require-corp',
-      'Cross-Origin-Opener-Policy': 'same-origin',
-    },
-  },
-  assetsInclude: ['**/*.wasm'],
-  build: {
-    outDir: 'dist',
-    sourcemap: true,
-    rollupOptions: {
-      output: {
-        manualChunks: undefined,
-      },
-    },
-  },
-  optimizeDeps: {
-    exclude: ['@jsonpathx/jsonpathx'],
-    esbuildOptions: {
-      define: {
-        global: 'globalThis',
-      },
-    },
-  },
-  resolve: {
-    alias: {
-      // Node.js module polyfills for browser
-      'fs': path.resolve(__dirname, './src/utils/fs-polyfill.ts'),
-      'fs/promises': path.resolve(__dirname, './src/utils/fs-polyfill.ts'),
-      'path': 'path-browserify',
-      'stream': 'stream-browserify',
-      'util': 'util',
-    },
-  },
-  define: {
-    'process.env': {},
-    'global': 'globalThis',
-  },
-  worker: {
-    format: 'es',
+  plugins: [react(), tailwindcss()],
+  server: { port: 3000 },
+  preview: { headers },
+  test: {
+    environment: 'jsdom',
+    include: ['test/**/*.test.{ts,tsx}'],
+    setupFiles: ['test/setup.ts'],
+    testTimeout: 20_000,
   },
 });

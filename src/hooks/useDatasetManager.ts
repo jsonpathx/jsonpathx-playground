@@ -4,7 +4,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { Dataset, DatasetMetadata } from '../types/dataset';
+import type { Dataset, DatasetMetadata } from '../types/dataset';
 import {
   formatFileSize,
   shouldPersist,
@@ -14,6 +14,44 @@ import {
 } from '../utils/file-utils';
 
 const STORAGE_KEY_PREFIX = 'jsonpathx_dataset_';
+
+/**
+ * Built-in datasets, served from public/. The 500-car sample loads at startup;
+ * the full file (28,488 cars, about 49 MB) is only fetched when it is chosen.
+ */
+interface BuiltinDataset {
+  id: string;
+  name: string;
+  url: string;
+  /** Known size and count, shown before the file is fetched. */
+  size: number;
+  itemCount: number;
+}
+
+export const SAMPLE_DATASET_ID = 'default';
+export const FULL_DATASET_ID = 'cars-full';
+
+export const BUILTIN_DATASETS: readonly BuiltinDataset[] = [
+  { id: SAMPLE_DATASET_ID, name: 'Cars sample (500 cars)', url: '/cars-sample.json', size: 657_018, itemCount: 500 },
+  { id: FULL_DATASET_ID, name: 'Cars, full dataset (loads on demand)', url: '/cars.json', size: 49_281_639, itemCount: 28_488 },
+];
+
+function builtinMetadata(builtin: BuiltinDataset, overrides: Partial<DatasetMetadata> = {}): DatasetMetadata {
+  return {
+    id: builtin.id,
+    name: builtin.name,
+    size: builtin.size,
+    sizeFormatted: formatFileSize(builtin.size),
+    itemCount: builtin.itemCount,
+    uploadedAt: 0,
+    isPersisted: false,
+    isDefault: true,
+    ...overrides,
+  };
+}
+
+const BUILTIN_METADATA: DatasetMetadata[] = BUILTIN_DATASETS.map((b) => builtinMetadata(b));
+const isBuiltin = (id: string) => BUILTIN_DATASETS.some((b) => b.id === id);
 const METADATA_STORAGE_KEY = 'jsonpathx_datasets_metadata';
 const CURRENT_DATASET_KEY = 'jsonpathx_current_dataset';
 
@@ -21,6 +59,8 @@ export interface UseDatasetManagerReturn {
   datasets: DatasetMetadata[];
   currentDataset: Dataset | null;
   isLoading: boolean;
+  /** Name of the dataset being fetched, while `isLoading`. */
+  loadingName: string | null;
   error: string | null;
   addDataset: (name: string, data: unknown, size: number) => Promise<void>;
   switchDataset: (id: string) => void;
@@ -35,6 +75,7 @@ export const useDatasetManager = (): UseDatasetManagerReturn => {
   const [currentDataset, setCurrentDataset] = useState<Dataset | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [loadingName, setLoadingName] = useState<string | null>(null);
 
   // Load metadata from localStorage
   const loadMetadata = useCallback((): DatasetMetadata[] => {
@@ -94,15 +135,17 @@ export const useDatasetManager = (): UseDatasetManagerReturn => {
     }
   }, []);
 
-  // Load default cars.json dataset
-  const loadDefaultDataset = useCallback(async () => {
+  // Fetch a built-in dataset (the sample, or the full file on demand)
+  const loadBuiltinDataset = useCallback(async (id: string) => {
+    const builtin = BUILTIN_DATASETS.find((b) => b.id === id) ?? BUILTIN_DATASETS[0]!;
     try {
       setIsLoading(true);
+      setLoadingName(builtin.name);
       setError(null);
 
-      const response = await fetch('/cars.json');
+      const response = await fetch(builtin.url);
       if (!response.ok) {
-        throw new Error(`Failed to load data: ${response.statusText}`);
+        throw new Error(`Failed to load data: ${response.status} ${response.statusText}`);
       }
 
       const text = await response.text();
@@ -110,48 +153,43 @@ export const useDatasetManager = (): UseDatasetManagerReturn => {
       const jsonData = JSON.parse(text);
       const carsData = jsonData.cars || jsonData;
 
-      const defaultMeta: DatasetMetadata = {
-        id: 'default',
-        name: 'Cars Dataset (Default)',
+      const meta = builtinMetadata(builtin, {
         size: sizeInBytes,
         sizeFormatted: formatFileSize(sizeInBytes),
         itemCount: getItemCount(carsData),
         uploadedAt: Date.now(),
-        isPersisted: false,
-        isDefault: true,
         preview: extractDataPreview(carsData),
-      };
-
-      setCurrentDataset({
-        metadata: defaultMeta,
-        data: carsData,
       });
 
-      // Update datasets list to include default
-      setDatasets((prev) => {
-        const withoutDefault = prev.filter((d) => !d.isDefault);
-        return [defaultMeta, ...withoutDefault];
-      });
+      setCurrentDataset({ metadata: meta, data: carsData });
+      setDatasets((prev) => [...BUILTIN_METADATA.map((m) => (m.id === meta.id ? meta : m)), ...prev.filter((d) => !d.isDefault)]);
 
-      localStorage.setItem(CURRENT_DATASET_KEY, 'default');
+      try {
+        localStorage.setItem(CURRENT_DATASET_KEY, builtin.id);
+      } catch {
+        // Not remembered across visits; nothing else depends on it.
+      }
     } catch (err) {
-      console.error('Error loading default dataset:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load default dataset');
+      console.error('Error loading dataset:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load dataset');
     } finally {
       setIsLoading(false);
     }
   }, []);
 
+  const loadDefaultDataset = useCallback(() => loadBuiltinDataset(SAMPLE_DATASET_ID), [loadBuiltinDataset]);
+
   // Initialize: load datasets and restore current
   useEffect(() => {
     const init = async () => {
       const metadata = loadMetadata();
-      setDatasets(metadata);
+      setDatasets([...BUILTIN_METADATA, ...metadata]);
 
-      // Try to restore last used dataset
+      // Try to restore last used dataset. Built-ins start with the sample:
+      // the full file is only fetched when someone picks it.
       const lastDatasetId = localStorage.getItem(CURRENT_DATASET_KEY);
 
-      if (lastDatasetId === 'default' || !lastDatasetId) {
+      if (!lastDatasetId || isBuiltin(lastDatasetId)) {
         await loadDefaultDataset();
       } else {
         const meta = metadata.find((m) => m.id === lastDatasetId);
@@ -215,8 +253,8 @@ export const useDatasetManager = (): UseDatasetManagerReturn => {
   // Switch to a different dataset
   const switchDataset = useCallback(
     (id: string) => {
-      if (id === 'default') {
-        loadDefaultDataset();
+      if (isBuiltin(id)) {
+        loadBuiltinDataset(id);
         return;
       }
 
@@ -240,14 +278,14 @@ export const useDatasetManager = (): UseDatasetManagerReturn => {
         loadDefaultDataset();
       }
     },
-    [datasets, loadDatasetData, loadDefaultDataset]
+    [datasets, loadDatasetData, loadDefaultDataset, loadBuiltinDataset]
   );
 
   // Remove a dataset
   const removeDataset = useCallback(
     (id: string) => {
-      if (id === 'default') {
-        console.warn('Cannot remove default dataset');
+      if (isBuiltin(id)) {
+        console.warn('Cannot remove a built-in dataset');
         return;
       }
 
@@ -299,6 +337,7 @@ export const useDatasetManager = (): UseDatasetManagerReturn => {
     datasets,
     currentDataset,
     isLoading,
+    loadingName,
     error,
     addDataset,
     switchDataset,

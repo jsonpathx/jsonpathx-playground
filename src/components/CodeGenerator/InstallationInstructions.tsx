@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react';
-import { SupportedLanguage } from '../../types/code-generator';
+import { useMemo, useState, type ReactElement } from 'react';
+import type { SupportedLanguage } from '../../types/code-generator';
 import { getInstallationInstructions } from '../../utils/code-generator';
 import CopyButton from './CopyButton';
 
@@ -17,7 +17,7 @@ const InstallationInstructions = ({ language }: InstallationInstructionsProps) =
   // Extract code blocks from markdown
   const renderInstructions = useMemo(() => {
     const lines = instructions.split('\n');
-    const elements: JSX.Element[] = [];
+    const elements: ReactElement[] = [];
     let currentCodeBlock: string[] = [];
     let inCodeBlock = false;
     let key = 0;
@@ -85,7 +85,7 @@ const InstallationInstructions = ({ language }: InstallationInstructionsProps) =
       >
         <div className="flex items-center space-x-2">
           <svg
-            className="w-5 h-5 text-blue-600 dark:text-blue-400"
+            className="w-5 h-5 text-blue-700 dark:text-blue-400"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -102,7 +102,7 @@ const InstallationInstructions = ({ language }: InstallationInstructionsProps) =
           </span>
         </div>
         <svg
-          className={`w-5 h-5 text-blue-600 dark:text-blue-400 transition-transform duration-200 ${
+          className={`w-5 h-5 text-blue-700 dark:text-blue-400 transition-transform duration-200 ${
             isExpanded ? 'transform rotate-180' : ''
           }`}
           fill="none"

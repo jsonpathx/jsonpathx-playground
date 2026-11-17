@@ -1,5 +1,5 @@
 import { useTheme } from '../hooks/useTheme';
-import type { ThemeMode } from '../contexts/ThemeContext';
+import type { ThemeMode } from '../contexts/theme-context';
 
 const ThemeToggle = () => {
   const { theme, setTheme } = useTheme();

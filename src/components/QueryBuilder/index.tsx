@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo } from 'react';
-import { QueryBuilderState, FilterCondition, ArraySlice } from '../../types/query-builder';
+import { useState, useMemo } from 'react';
+import type { QueryBuilderState, FilterCondition, ArraySlice } from '../../types/query-builder';
 import {
   analyzeSchema,
   buildJsonPathQuery,
@@ -19,12 +19,16 @@ interface QueryBuilderProps {
 }
 
 const QueryBuilder = ({ data, currentQuery, onQueryChange, isOpen, onClose }: QueryBuilderProps) => {
-  const [state, setState] = useState<QueryBuilderState>({
-    mode: 'visual',
-    rootPath: '$',
-    filters: [],
-    selectedPath: [],
-    recursiveDescent: false,
+  // Populate the visual builder from the query it opens with.
+  const [state, setState] = useState<QueryBuilderState>(() => {
+    const parsed = parseJsonPathQuery(currentQuery);
+    return {
+      mode: 'visual',
+      rootPath: '$',
+      filters: parsed.filters,
+      selectedPath: [],
+      recursiveDescent: parsed.recursiveDescent,
+    };
   });
 
   const [textQuery, setTextQuery] = useState(currentQuery);
@@ -68,8 +72,12 @@ const QueryBuilder = ({ data, currentQuery, onQueryChange, isOpen, onClose }: Qu
     return isValidJsonPath(generatedQuery);
   }, [generatedQuery]);
 
-  // Sync with external query changes
-  useEffect(() => {
+  // Sync with external query changes. This adjusts state during render when
+  // `currentQuery` changes (React's pattern for deriving state from a prop),
+  // so it reads the current `generatedQuery` and `state.mode` without an effect.
+  const [prevQuery, setPrevQuery] = useState(currentQuery);
+  if (currentQuery !== prevQuery) {
+    setPrevQuery(currentQuery);
     if (currentQuery !== generatedQuery && state.mode === 'visual') {
       setTextQuery(currentQuery);
       // Try to parse the current query to populate visual builder
@@ -80,7 +88,7 @@ const QueryBuilder = ({ data, currentQuery, onQueryChange, isOpen, onClose }: Qu
         recursiveDescent: parsed.recursiveDescent,
       }));
     }
-  }, [currentQuery]);
+  }
 
   // Update state handlers
   const handleFilterChange = (filters: FilterCondition[]) => {
@@ -131,14 +139,14 @@ const QueryBuilder = ({ data, currentQuery, onQueryChange, isOpen, onClose }: Qu
     <div className="fixed inset-0 z-50 overflow-hidden">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
+        className="absolute inset-0 bg-black/50 backdrop-blur-xs transition-opacity"
         onClick={onClose}
       />
 
       {/* Panel */}
       <div className="absolute right-0 top-0 h-full w-full max-w-4xl bg-white dark:bg-gray-800 shadow-2xl transform transition-transform">
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-blue-700 dark:from-blue-700 dark:to-blue-800 px-6 py-4 text-white">
+        <div className="bg-linear-to-r from-blue-600 to-blue-700 dark:from-blue-700 dark:to-blue-800 px-6 py-4 text-white">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-2xl font-bold">Visual Query Builder</h2>
@@ -209,7 +217,7 @@ const QueryBuilder = ({ data, currentQuery, onQueryChange, isOpen, onClose }: Qu
                         type="checkbox"
                         checked={state.recursiveDescent}
                         onChange={handleRecursiveDescentToggle}
-                        className="w-4 h-4 text-blue-600 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500"
+                        className="w-4 h-4 text-blue-700 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded-sm focus:ring-blue-500"
                       />
                       <span className="text-sm text-blue-900 dark:text-blue-100">
                         Recursive Search (..)
@@ -245,7 +253,7 @@ const QueryBuilder = ({ data, currentQuery, onQueryChange, isOpen, onClose }: Qu
                           onChange={(e) =>
                             handleArraySliceChange(e.target.checked ? {} : undefined)
                           }
-                          className="w-4 h-4 text-blue-600 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500"
+                          className="w-4 h-4 text-blue-700 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded-sm focus:ring-blue-500"
                         />
                         <span className="text-sm text-gray-700 dark:text-gray-300">
                           Enable array slicing
@@ -268,7 +276,7 @@ const QueryBuilder = ({ data, currentQuery, onQueryChange, isOpen, onClose }: Qu
                                 })
                               }
                               placeholder="0"
-                              className="w-full px-2 py-1.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              className="w-full px-2 py-1.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-sm text-sm text-gray-900 dark:text-gray-100 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
                             />
                           </div>
                           <div>
@@ -285,7 +293,7 @@ const QueryBuilder = ({ data, currentQuery, onQueryChange, isOpen, onClose }: Qu
                                 })
                               }
                               placeholder="10"
-                              className="w-full px-2 py-1.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              className="w-full px-2 py-1.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-sm text-sm text-gray-900 dark:text-gray-100 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
                             />
                           </div>
                           <div>
@@ -302,7 +310,7 @@ const QueryBuilder = ({ data, currentQuery, onQueryChange, isOpen, onClose }: Qu
                                 })
                               }
                               placeholder="1"
-                              className="w-full px-2 py-1.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              className="w-full px-2 py-1.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-sm text-sm text-gray-900 dark:text-gray-100 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
                             />
                           </div>
                         </div>
@@ -343,14 +351,14 @@ const QueryBuilder = ({ data, currentQuery, onQueryChange, isOpen, onClose }: Qu
                 <textarea
                   value={textQuery}
                   onChange={(e) => setTextQuery(e.target.value)}
-                  className="w-full h-64 px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white font-mono text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                  className="w-full h-64 px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white font-mono text-sm focus:outline-hidden focus:ring-2 focus:ring-blue-500 resize-none"
                   placeholder="Enter JSONPath query..."
                   spellCheck={false}
                 />
                 <div className="mt-4">
                   <button
                     onClick={handleApplyQuery}
-                    className="w-full px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold rounded-lg transition-all"
+                    className="w-full px-4 py-3 bg-linear-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold rounded-lg transition-all"
                   >
                     Apply Query
                   </button>

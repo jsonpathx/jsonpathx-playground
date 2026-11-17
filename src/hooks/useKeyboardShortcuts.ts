@@ -1,5 +1,6 @@
 import { useEffect, useCallback, useRef } from 'react';
-import { KeyboardShortcut, matchesShortcut } from '../utils/keyboard-utils';
+import type { KeyboardShortcut} from '../utils/keyboard-utils';
+import { matchesShortcut } from '../utils/keyboard-utils';
 
 /**
  * Options for the useKeyboardShortcuts hook

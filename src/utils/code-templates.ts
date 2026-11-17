@@ -1,4 +1,4 @@
-import { LanguageTemplate } from '../types/code-generator';
+import type { LanguageTemplate } from '../types/code-generator';
 
 /**
  * Escape special characters for JSON strings
@@ -26,7 +26,8 @@ export function formatDataForCode(data: unknown, maxItems = 3): string {
 }
 
 /**
- * Language templates for code generation
+ * Languages the code generator supports (names and install hints for the UI;
+ * the code itself is built in code-generator.ts).
  */
 export const LANGUAGE_TEMPLATES: Record<string, LanguageTemplate> = {
   javascript: {
@@ -35,44 +36,9 @@ export const LANGUAGE_TEMPLATES: Record<string, LanguageTemplate> = {
     install: 'npm install @jsonpathx/jsonpathx',
     installCommand: 'npm install @jsonpathx/jsonpathx',
     extension: 'js',
-    description: 'Node.js with CommonJS/ESM support',
+    description: 'Node.js: ES modules (async) or CommonJS (sync)',
     supportsAsync: true,
-    template: `// Install dependencies: {{INSTALL}}
-// File: example.js
-
-{{IMPORTS}}
-
-{{COMMENTS_START}}
-// Sample data for JSONPath query
-{{COMMENTS_END}}
-const data = {{DATA}};
-
-{{COMMENTS_START}}
-// JSONPath query to execute
-{{COMMENTS_END}}
-const query = '{{QUERY}}';
-
-{{ASYNC_START}}async function runQuery() {
-  {{ERROR_HANDLING_START}}try {
-    {{COMMENTS_START}}// Execute the JSONPath query
-    {{COMMENTS_END}}{{ASYNC_END}}const results = {{QUERY_EXECUTION}};
-
-    {{COMMENTS_START}}// Display results
-    {{COMMENTS_END}}console.log('Query Results:');
-    console.log(JSON.stringify(results, null, 2));
-    console.log(\`\\nFound \${Array.isArray(results) ? results.length : 1} result(s)\`);
-{{ASYNC_START}}  {{ERROR_HANDLING_START}}} catch (error) {
-    console.error('Error executing query:', error.message);
-    process.exit(1);
-  }{{ERROR_HANDLING_END}}
-}
-
-runQuery();{{ASYNC_END}}{{ERROR_HANDLING_START}}{{SYNC_ONLY}} catch (error) {
-  console.error('Error executing query:', error.message);
-  process.exit(1);
-}{{ERROR_HANDLING_END}}{{SYNC_ONLY}}`
   },
-
   typescript: {
     name: 'TypeScript',
     language: 'typescript',
@@ -81,185 +47,14 @@ runQuery();{{ASYNC_END}}{{ERROR_HANDLING_START}}{{SYNC_ONLY}} catch (error) {
     extension: 'ts',
     description: 'TypeScript with full type safety',
     supportsAsync: true,
-    template: `// Install dependencies: {{INSTALL}}
-// Install dev dependencies: npm install -D @types/node typescript
-// Compile: npx tsc example.ts
-// Run: node example.js
-
-{{IMPORTS}}
-
-{{COMMENTS_START}}
-// Define types for your data structure
-{{COMMENTS_END}}
-interface DataItem {
-  [key: string]: unknown;
-}
-
-{{COMMENTS_START}}
-// Sample data for JSONPath query
-{{COMMENTS_END}}
-const data: DataItem[] | DataItem = {{DATA}};
-
-{{COMMENTS_START}}
-// JSONPath query to execute
-{{COMMENTS_END}}
-const query: string = '{{QUERY}}';
-
-{{ASYNC_START}}async function runQuery(): Promise<void> {
-  {{ERROR_HANDLING_START}}try {
-    {{COMMENTS_START}}// Execute the JSONPath query
-    {{COMMENTS_END}}{{ASYNC_END}}const results: unknown = {{QUERY_EXECUTION}};
-
-    {{COMMENTS_START}}// Display results
-    {{COMMENTS_END}}console.log('Query Results:');
-    console.log(JSON.stringify(results, null, 2));
-    console.log(\`\\nFound \${Array.isArray(results) ? results.length : 1} result(s)\`);
-{{ASYNC_START}}  {{ERROR_HANDLING_START}}} catch (error) {
-    console.error('Error executing query:', (error as Error).message);
-    process.exit(1);
-  }{{ERROR_HANDLING_END}}
-}
-
-runQuery();{{ASYNC_END}}{{ERROR_HANDLING_START}}{{SYNC_ONLY}} catch (error) {
-  console.error('Error executing query:', (error as Error).message);
-  process.exit(1);
-}{{ERROR_HANDLING_END}}{{SYNC_ONLY}}`
   },
-
   browser: {
     name: 'Browser JavaScript',
     language: 'browser',
-    install: 'Include via CDN or npm + bundler',
+    install: 'Load from a CDN (esm.sh) or npm + a bundler',
     installCommand: 'npm install @jsonpathx/jsonpathx',
     extension: 'html',
-    description: 'Frontend JavaScript with fetch API',
+    description: 'A standalone HTML page using the ES module from a CDN',
     supportsAsync: true,
-    template: `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>JSONPathX Browser Example</title>
-  <style>
-    body {
-      font-family: system-ui, -apple-system, sans-serif;
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 20px;
-      background: #f5f5f5;
-    }
-    .container {
-      background: white;
-      padding: 20px;
-      border-radius: 8px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-    pre {
-      background: #f8f8f8;
-      padding: 15px;
-      border-radius: 4px;
-      overflow-x: auto;
-    }
-    .error {
-      color: #dc2626;
-      background: #fee;
-      padding: 10px;
-      border-radius: 4px;
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <h1>JSONPathX Browser Example</h1>
-    <div id="results"></div>
-  </div>
-
-  <script type="module">
-    import { query as jsonpathQuery } from 'https://unpkg.com/@jsonpathx/jsonpathx@0.1.3?module';
-    {{COMMENTS_START}}// Sample data for JSONPath query{{COMMENTS_END}}
-    const data = {{DATA}};
-
-    {{COMMENTS_START}}// JSONPath query to execute{{COMMENTS_END}}
-    const queryString = '{{QUERY}}';
-
-    {{COMMENTS_START}}// Execute query and display results{{COMMENTS_END}}
-    async function runQuery() {
-      const resultsDiv = document.getElementById('results');
-
-      {{ERROR_HANDLING_START}}try {
-        {{COMMENTS_END}}{{COMMENTS_START}}// Execute the JSONPath query{{COMMENTS_END}}
-        const results = {{QUERY_EXECUTION}};
-
-        {{COMMENTS_START}}// Display results{{COMMENTS_END}}
-        const resultCount = Array.isArray(results) ? results.length : 1;
-        resultsDiv.textContent = '';
-        const heading = document.createElement('h2');
-        heading.textContent = \`Query Results (\${resultCount} item(s))\`;
-        const pre = document.createElement('pre');
-        pre.textContent = JSON.stringify(results, null, 2);
-        resultsDiv.appendChild(heading);
-        resultsDiv.appendChild(pre);
-      {{ERROR_HANDLING_START}}} catch (error) {
-        resultsDiv.textContent = '';
-        const errorBox = document.createElement('div');
-        errorBox.className = 'error';
-        const errorLabel = document.createElement('strong');
-        errorLabel.textContent = 'Error: ';
-        const errorMessage = document.createElement('span');
-        errorMessage.textContent = error.message;
-        errorBox.appendChild(errorLabel);
-        errorBox.appendChild(errorMessage);
-        resultsDiv.appendChild(errorBox);
-      }{{ERROR_HANDLING_END}}
-    }
-
-    {{COMMENTS_START}}// Run on page load{{COMMENTS_END}}
-    runQuery();
-  </script>
-</body>
-</html>`
-  }
+  },
 };
-
-/**
- * Generate import statements based on language and async preference
- */
-export function generateImports(language: string, useAsync: boolean): string {
-  switch (language) {
-    case 'javascript':
-      if (useAsync) {
-        return `import { query } from '@jsonpathx/jsonpathx';`;
-      }
-      return `const { query } = require('@jsonpathx/jsonpathx');`;
-
-    case 'typescript':
-      return `import { query } from '@jsonpathx/jsonpathx';`;
-
-    default:
-      return '';
-  }
-}
-
-/**
- * Generate query execution code
- */
-export function generateQueryExecution(language: string, useAsync: boolean): string {
-  switch (language) {
-    case 'javascript':
-    case 'typescript':
-      return useAsync ? 'await query(query, data)' : 'query(query, data)';
-
-    case 'browser':
-      return 'await jsonpathQuery(queryString, data)';
-
-    default:
-      return '';
-  }
-}
-
-/**
- * Get CDN script tag for browser usage
- */
-export function getBrowserScriptTag(): string {
-  return '';
-}

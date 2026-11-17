@@ -31,7 +31,7 @@ const QueryPreview = ({ query, onApply, isValid }: QueryPreviewProps) => {
         <div className="flex items-center space-x-2">
           <button
             onClick={handleCopy}
-            className="px-2 py-1 text-xs text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded transition-colors"
+            className="px-2 py-1 text-xs text-blue-700 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-sm transition-colors"
             title="Copy query"
           >
             {copyStatus === 'success' ? 'Copied!' : 'Copy'}
@@ -53,7 +53,7 @@ const QueryPreview = ({ query, onApply, isValid }: QueryPreviewProps) => {
         <div className="absolute top-2 right-2">
           {isValid ? (
             <div
-              className="flex items-center space-x-1 px-2 py-1 bg-green-600 rounded text-xs text-white"
+              className="flex items-center space-x-1 px-2 py-1 bg-green-600 rounded-sm text-xs text-white"
               title="Valid query"
             >
               <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
@@ -67,7 +67,7 @@ const QueryPreview = ({ query, onApply, isValid }: QueryPreviewProps) => {
             </div>
           ) : (
             <div
-              className="flex items-center space-x-1 px-2 py-1 bg-yellow-600 rounded text-xs text-white"
+              className="flex items-center space-x-1 px-2 py-1 bg-yellow-600 rounded-sm text-xs text-white"
               title="Query may be incomplete"
             >
               <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
@@ -95,7 +95,7 @@ const QueryPreview = ({ query, onApply, isValid }: QueryPreviewProps) => {
       <button
         onClick={onApply}
         disabled={!isValid || !query}
-        className="w-full px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-all transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center space-x-2 shadow-lg"
+        className="w-full px-4 py-3 bg-linear-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-all transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center space-x-2 shadow-lg"
       >
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
@@ -116,34 +116,34 @@ const QueryPreview = ({ query, onApply, isValid }: QueryPreviewProps) => {
         <div className="mt-2 text-xs text-gray-600 dark:text-gray-400 space-y-2">
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <code className="bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded">$</code> Root
+              <code className="bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded-sm">$</code> Root
               object
             </div>
             <div>
-              <code className="bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded">@</code> Current
+              <code className="bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded-sm">@</code> Current
               object
             </div>
             <div>
-              <code className="bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded">.</code> Child
+              <code className="bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded-sm">.</code> Child
               operator
             </div>
             <div>
-              <code className="bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded">..</code>{' '}
+              <code className="bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded-sm">..</code>{' '}
               Recursive descent
             </div>
             <div>
-              <code className="bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded">*</code> Wildcard
+              <code className="bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded-sm">*</code> Wildcard
             </div>
             <div>
-              <code className="bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded">[n]</code> Array
+              <code className="bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded-sm">[n]</code> Array
               index
             </div>
             <div>
-              <code className="bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded">[n:m]</code> Array
+              <code className="bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded-sm">[n:m]</code> Array
               slice
             </div>
             <div>
-              <code className="bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded">[?()]</code>{' '}
+              <code className="bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded-sm">[?()]</code>{' '}
               Filter
             </div>
           </div>

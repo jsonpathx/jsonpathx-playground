@@ -1,4 +1,4 @@
-import { SupportedLanguage } from '../types/code-generator';
+import type { SupportedLanguage } from '../types/code-generator';
 
 /**
  * Simple regex-based syntax highlighting for code
@@ -80,12 +80,17 @@ function tokenizeJavaScript(code: string): HighlightToken[] {
   // Sort by position
   matches.sort((a, b) => a.index - b.index);
 
-  // Remove overlapping matches (keep first one)
-  const filteredMatches = matches.filter((m, i) => {
-    if (i === 0) return true;
-    const prev = matches[i - 1];
-    return m.index >= prev.index + prev.length;
-  });
+  // Remove overlapping matches: keep the earliest, and drop anything that
+  // starts inside a match already kept (comparing with the last *kept* match,
+  // not the previous candidate, so no text is emitted twice).
+  const filteredMatches: typeof matches = [];
+  let keptEnd = 0;
+  for (const m of matches) {
+    if (m.index >= keptEnd) {
+      filteredMatches.push(m);
+      keptEnd = m.index + m.length;
+    }
+  }
 
   // Build tokens
   filteredMatches.forEach((m) => {
@@ -113,7 +118,7 @@ function getTokenClass(type: string): string {
     case 'string':
       return 'text-green-600 dark:text-green-400';
     case 'comment':
-      return 'text-gray-500 dark:text-gray-500 italic';
+      return 'text-gray-500 dark:text-gray-400 italic';
     case 'number':
       return 'text-blue-600 dark:text-blue-400';
     case 'function':

@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { SupportedLanguage } from '../../types/code-generator';
+import type { SupportedLanguage } from '../../types/code-generator';
 import { highlightCode } from '../../utils/syntax-highlight';
 import CopyButton from './CopyButton';
 
@@ -39,7 +39,7 @@ const CodePreview = ({ code, language, filename, onDownload }: CodePreviewProps)
           <CopyButton text={code} />
           <button
             onClick={onDownload}
-            className="px-3 py-1.5 rounded text-sm font-medium bg-green-600 hover:bg-green-500 text-white transition-colors duration-200"
+            className="px-3 py-1.5 rounded-sm text-sm font-medium bg-green-600 hover:bg-green-500 text-white transition-colors duration-200"
             title="Download file"
           >
             <svg

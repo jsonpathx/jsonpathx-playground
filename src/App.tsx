@@ -16,7 +16,8 @@ import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { usePerformanceAnalytics } from './hooks/usePerformanceAnalytics';
 import { useTheme } from './hooks/useTheme';
 import { useDatasetManager } from './hooks/useDatasetManager';
-import { KeyboardShortcut } from './utils/keyboard-utils';
+import type { KeyboardShortcut } from './utils/keyboard-utils';
+import { JSONPATHX_VERSION } from './version';
 
 interface Car {
   [key: string]: unknown;
@@ -28,6 +29,7 @@ function App() {
     datasets,
     currentDataset,
     isLoading: datasetLoading,
+    loadingName,
     error: datasetError,
     addDataset,
     switchDataset,
@@ -46,13 +48,15 @@ function App() {
 
   // Use URL state for query persistence and sharing
   const { value: urlQuery, setValue: setUrlQuery, getShareableUrl } = useUrlState('$[0:10]');
-  const [query, setQuery] = useState<string>('$[0:10]');
+  const [query, setQuery] = useState<string>(urlQuery);
 
-  const { results, error, isExecuting, executionTime, execute } = useJsonPath(data);
+  const { results, error, isExecuting, executionTime, lastRun, execute } = useJsonPath(data);
 
   // Query history management
   const queryHistory = useQueryHistory();
   const performanceAnalytics = usePerformanceAnalytics();
+  const { addQuery } = queryHistory;
+  const { addMetric } = performanceAnalytics;
 
   // Theme management
   const { setTheme, resolvedTheme } = useTheme();
@@ -69,13 +73,6 @@ function App() {
   const historyRef = useRef<HTMLDivElement>(null);
   const queryEditorRef = useRef<HTMLDivElement>(null);
 
-  // Sync URL query with local query state
-  useEffect(() => {
-    if (urlQuery !== null) {
-      setQuery(urlQuery);
-    }
-  }, [urlQuery]);
-
   // Execute query when data or query changes
   useEffect(() => {
     if (data && query.trim()) {
@@ -83,14 +80,14 @@ function App() {
     }
   }, [data, query, execute]);
 
-  // Add query to history after successful execution
+  // Add each successful run to the history and the analytics. `lastRun` is set
+  // together with the results, so the query, time and count always match.
   useEffect(() => {
-    if (results !== null && !error && executionTime !== null && query.trim()) {
-      const resultCount = Array.isArray(results) ? results.length : 1;
-      queryHistory.addQuery(query, executionTime, resultCount);
-      performanceAnalytics.addMetric(query, executionTime, resultCount);
+    if (lastRun && lastRun.query.trim()) {
+      addQuery(lastRun.query, lastRun.executionTime, lastRun.resultCount);
+      addMetric(lastRun.query, lastRun.executionTime, lastRun.resultCount);
     }
-  }, [results, error, executionTime, query, queryHistory.addQuery, performanceAnalytics.addMetric]);
+  }, [lastRun, addQuery, addMetric]);
 
   const handleQueryChange = useCallback((newQuery: string) => {
     setQuery(newQuery);
@@ -258,11 +255,11 @@ setShowShortcutsHelp(false);
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-gray-50 dark:from-gray-900 dark:via-blue-900 dark:to-gray-900 flex items-center justify-center transition-colors duration-300">
+      <div className="min-h-screen bg-linear-to-br from-gray-50 via-blue-50 to-gray-50 dark:from-gray-900 dark:via-blue-900 dark:to-gray-900 flex items-center justify-center transition-colors duration-300">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-16 w-16 border-4 border-blue-500 border-t-transparent mb-4"></div>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2 transition-colors duration-300">Loading Dataset...</h2>
-          <p className="text-gray-700 dark:text-gray-300 transition-colors duration-300">Please wait while we load the dataset</p>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2 transition-colors duration-300">Loading dataset…</h2>
+          <p className="text-gray-700 dark:text-gray-300 transition-colors duration-300">{loadingName ?? 'Please wait while we load the dataset'}</p>
         </div>
       </div>
     );
@@ -270,33 +267,41 @@ setShowShortcutsHelp(false);
 
   if (loadError) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-red-50 to-gray-50 dark:from-gray-900 dark:via-red-900 dark:to-gray-900 flex items-center justify-center p-4 transition-colors duration-300">
+      <div className="min-h-screen bg-linear-to-br from-gray-50 via-red-50 to-gray-50 dark:from-gray-900 dark:via-red-900 dark:to-gray-900 flex items-center justify-center p-4 transition-colors duration-300">
         <div className="bg-red-100 dark:bg-red-900/50 border border-red-400 dark:border-red-500 rounded-lg p-8 max-w-2xl transition-colors duration-300">
           <h2 className="text-2xl font-bold text-red-900 dark:text-white mb-4 transition-colors duration-300">Error Loading Data</h2>
           <p className="text-red-700 dark:text-red-200 mb-4 transition-colors duration-300">{loadError}</p>
           <p className="text-gray-700 dark:text-gray-300 text-sm transition-colors duration-300">
-            Make sure the cars.json file is in the public directory or root of the project.
+            Check your connection and try again, or use your own JSON file.
           </p>
-          <button
-            onClick={() => setShowFileUpload(true)}
-            className="mt-4 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition-colors"
-          >
-            Upload Your Own Dataset
-          </button>
+          <div className="mt-4 flex flex-wrap gap-3">
+            <button
+              onClick={() => loadDefaultDataset()}
+              className="px-4 py-2 bg-gray-700 hover:bg-gray-800 text-white rounded-lg font-medium transition-colors"
+            >
+              Load the Sample Dataset
+            </button>
+            <button
+              onClick={() => setShowFileUpload(true)}
+              className="px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white rounded-lg font-medium transition-colors"
+            >
+              Upload Your Own Dataset
+            </button>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-gray-50 dark:from-gray-900 dark:via-blue-900 dark:to-gray-900 transition-colors duration-300">
+    <div className="min-h-screen bg-linear-to-br from-gray-50 via-blue-50 to-gray-50 dark:from-gray-900 dark:via-blue-900 dark:to-gray-900 transition-colors duration-300">
       {/* Header */}
-      <header className="bg-white/80 dark:bg-gray-900/50 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50 transition-colors duration-300">
+      <header className="bg-white/80 dark:bg-gray-900/50 backdrop-blur-xs border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50 transition-colors duration-300">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between gap-4">
             <div className="flex-1 min-w-0">
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-1 transition-colors duration-300">
-                JSONPathX <span className="text-blue-600 dark:text-blue-400 transition-colors duration-300">Interactive Demo</span>
+                JSONPathX <span className="text-blue-700 dark:text-blue-400 transition-colors duration-300">Interactive Demo</span>
               </h1>
               <p className="text-gray-700 dark:text-gray-300 text-sm transition-colors duration-300">
                 Powerful JSONPath query engine for JavaScript
@@ -359,7 +364,7 @@ setShowShortcutsHelp(false);
       </header>
 
       <div className="container mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <main className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Column - Query Editor, Examples, and History */}
           <div className="lg:col-span-1 space-y-6">
             <div ref={queryEditorRef}>
@@ -402,7 +407,7 @@ setShowShortcutsHelp(false);
               data={data}
             />
           </div>
-        </div>
+        </main>
 
         {/* Footer */}
         <footer className="mt-12 pt-8 border-t border-gray-200 dark:border-gray-700 transition-colors duration-300">
@@ -413,18 +418,35 @@ setShowShortcutsHelp(false);
                 href="https://github.com/jsonpathx/jsonpathx"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
+                className="text-blue-700 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
               >
                 JSONPathX
               </a>
-              {' '}— React + TypeScript + Vite
+              {' '}<span data-testid="library-version">v{JSONPATHX_VERSION}</span> — React + TypeScript + Vite ·{' '}
+              <a
+                href="https://www.npmjs.com/package/@jsonpathx/jsonpathx"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-700 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
+              >
+                npm
+              </a>
+              {' '}·{' '}
+              <a
+                href="https://jsonpathx.github.io/jsonpathx/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-700 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
+              >
+                docs
+              </a>
             </p>
             <p className="text-xs text-gray-500 transition-colors duration-300">
               Try different JSONPath queries to explore the dataset
             </p>
             <button
               onClick={() => setShowShortcutsHelp(true)}
-              className="mt-3 text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors underline"
+              className="mt-3 text-xs text-blue-700 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors underline"
             >
               View Keyboard Shortcuts
             </button>

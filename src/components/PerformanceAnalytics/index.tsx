@@ -80,7 +80,7 @@ export const PerformanceAnalytics: React.FC<PerformanceAnalyticsProps> = ({ isOp
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/50 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/50 backdrop-blur-xs">
       <div className="min-h-screen px-4 py-8">
         <div className="max-w-7xl mx-auto bg-white dark:bg-gray-900 rounded-lg shadow-2xl">
           {/* Header */}
@@ -198,7 +198,7 @@ export const PerformanceAnalytics: React.FC<PerformanceAnalyticsProps> = ({ isOp
 
                 {/* Trends Card */}
                 {trends.recentAverage > 0 && (
-                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                  <div className="bg-linear-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
                     <div className="flex items-center justify-between">
                       <div>
                         <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-1">Performance Trend</h4>
@@ -217,7 +217,7 @@ export const PerformanceAnalytics: React.FC<PerformanceAnalyticsProps> = ({ isOp
                           )}
                           <span
                             className={`text-lg font-bold ${
-                              trends.improving ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
+                              trends.improving ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-400'
                             }`}
                           >
                             {trends.improving ? '-' : '+'}
@@ -267,7 +267,7 @@ export const PerformanceAnalytics: React.FC<PerformanceAnalyticsProps> = ({ isOp
                           <div className="flex-1">
                             <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                               <div
-                                className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 dark:from-blue-400 dark:to-indigo-400 transition-all duration-500"
+                                className="h-full bg-linear-to-r from-blue-500 to-indigo-500 dark:from-blue-400 dark:to-indigo-400 transition-all duration-500"
                                 style={{ width: `${bin.percentage}%` }}
                               />
                             </div>
@@ -298,7 +298,7 @@ export const PerformanceAnalytics: React.FC<PerformanceAnalyticsProps> = ({ isOp
                     {insights.map((insight, index: number) => (
                       <div key={index} className={`border rounded-lg p-4 ${insightColors[insight.type as keyof typeof insightColors]}`}>
                         <div className="flex items-start gap-3">
-                          <div className="flex-shrink-0 mt-0.5">{insightIcons[insight.type as keyof typeof insightIcons]}</div>
+                          <div className="shrink-0 mt-0.5">{insightIcons[insight.type as keyof typeof insightIcons]}</div>
                           <div className="flex-1">
                             <h4 className="font-semibold mb-1">{insight.title}</h4>
                             <p className="text-sm opacity-90">{insight.message}</p>

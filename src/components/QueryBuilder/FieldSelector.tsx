@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { FieldNode } from '../../types/query-builder';
+import type { FieldNode } from '../../types/query-builder';
 
 interface FieldSelectorProps {
   fields: FieldNode[];
@@ -66,11 +66,11 @@ const FieldSelector = ({ fields, selectedPath, onFieldSelect }: FieldSelectorPro
     if (isArray) return 'text-purple-600 dark:text-purple-400';
     switch (type) {
       case 'object':
-        return 'text-blue-600 dark:text-blue-400';
+        return 'text-blue-700 dark:text-blue-400';
       case 'array':
         return 'text-purple-600 dark:text-purple-400';
       case 'string':
-        return 'text-green-600 dark:text-green-400';
+        return 'text-green-700 dark:text-green-400';
       case 'number':
         return 'text-orange-600 dark:text-orange-400';
       case 'boolean':
@@ -102,7 +102,7 @@ const FieldSelector = ({ fields, selectedPath, onFieldSelect }: FieldSelectorPro
                 e.stopPropagation();
                 toggleExpand(field.path);
               }}
-              className="mr-1 flex-shrink-0 w-4 h-4 flex items-center justify-center text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+              className="mr-1 shrink-0 w-4 h-4 flex items-center justify-center text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
             >
               {isExpanded ? '▼' : '▶'}
             </button>
@@ -110,7 +110,7 @@ const FieldSelector = ({ fields, selectedPath, onFieldSelect }: FieldSelectorPro
           {!hasChildren && <span className="w-4 mr-1" />}
 
           <span
-            className={`text-xs font-mono mr-2 flex-shrink-0 ${getTypeColor(
+            className={`text-xs font-mono mr-2 shrink-0 ${getTypeColor(
               field.type,
               field.isArray
             )}`}
@@ -147,7 +147,7 @@ const FieldSelector = ({ fields, selectedPath, onFieldSelect }: FieldSelectorPro
         </h3>
         <button
           onClick={() => setExpandedNodes(new Set(['root']))}
-          className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
+          className="text-xs text-blue-700 dark:text-blue-400 hover:underline"
         >
           Collapse All
         </button>
@@ -166,7 +166,7 @@ const FieldSelector = ({ fields, selectedPath, onFieldSelect }: FieldSelectorPro
       <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
         <div className="text-xs text-gray-500 dark:text-gray-400 space-y-1">
           <div className="flex items-center space-x-2">
-            <span className="text-blue-600 dark:text-blue-400 font-mono">{'{}'}</span>
+            <span className="text-blue-700 dark:text-blue-400 font-mono">{'{}'}</span>
             <span>Object</span>
           </div>
           <div className="flex items-center space-x-2">
@@ -174,7 +174,7 @@ const FieldSelector = ({ fields, selectedPath, onFieldSelect }: FieldSelectorPro
             <span>Array</span>
           </div>
           <div className="flex items-center space-x-2">
-            <span className="text-green-600 dark:text-green-400 font-mono">"</span>
+            <span className="text-green-700 dark:text-green-400 font-mono">"</span>
             <span>String</span>
           </div>
           <div className="flex items-center space-x-2">

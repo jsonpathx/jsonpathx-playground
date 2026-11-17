@@ -1,4 +1,4 @@
-import { SupportedLanguage } from '../../types/code-generator';
+import type { SupportedLanguage } from '../../types/code-generator';
 import { getLanguageIcon } from '../../utils/syntax-highlight';
 import { LANGUAGE_TEMPLATES } from '../../utils/code-templates';
 

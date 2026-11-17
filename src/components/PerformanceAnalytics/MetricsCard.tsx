@@ -65,7 +65,7 @@ export const MetricsCard: React.FC<MetricsCardProps> = ({
             <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">{title}</h3>
           </div>
           <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">{displayValue}</div>
-          {subtitle && <p className="text-xs text-gray-500 dark:text-gray-500">{subtitle}</p>}
+          {subtitle && <p className="text-xs text-gray-500 dark:text-gray-400">{subtitle}</p>}
         </div>
         {trend && trendValue && (
           <div className="flex items-center gap-1 text-sm">
@@ -75,7 +75,7 @@ export const MetricsCard: React.FC<MetricsCardProps> = ({
                 trend === 'up'
                   ? 'text-red-600 dark:text-red-400'
                   : trend === 'down'
-                  ? 'text-green-600 dark:text-green-400'
+                  ? 'text-green-700 dark:text-green-400'
                   : 'text-gray-600 dark:text-gray-400'
               }`}
             >

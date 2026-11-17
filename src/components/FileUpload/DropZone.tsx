@@ -3,7 +3,8 @@
  * Drag-and-drop zone for file uploads
  */
 
-import { useState, useCallback, DragEvent, ChangeEvent, useRef } from 'react';
+import type { DragEvent, ChangeEvent} from 'react';
+import { useState, useCallback, useRef } from 'react';
 
 interface DropZoneProps {
   onFileSelect: (file: File) => void;
@@ -135,6 +136,9 @@ export default function DropZone({
     >
       <input
         ref={fileInputRef}
+        id="dataset-file"
+        name="dataset-file"
+        aria-label="Choose a JSON file"
         type="file"
         accept={accept}
         onChange={handleFileInputChange}
@@ -150,7 +154,7 @@ export default function DropZone({
               ? 'text-blue-500'
               : dragError
               ? 'text-red-500'
-              : 'text-gray-400 dark:text-gray-500'
+              : 'text-gray-400 dark:text-gray-400'
           }`}
           fill="none"
           stroke="currentColor"
@@ -182,7 +186,7 @@ export default function DropZone({
         )}
 
         {/* Supported formats */}
-        <div className="text-xs text-gray-400 dark:text-gray-500">
+        <div className="text-xs text-gray-400 dark:text-gray-400">
           Supports: .json files {maxSize && `(max ${Math.round(maxSize / 1024 / 1024)}MB)`}
         </div>
       </div>

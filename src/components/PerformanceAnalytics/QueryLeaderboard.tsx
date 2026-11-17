@@ -3,7 +3,7 @@
  */
 
 import React, { useState } from 'react';
-import { QueryMetrics } from '../../types/analytics';
+import type { QueryMetrics } from '../../types/analytics';
 import { formatExecutionTime } from '../../utils/analytics-utils';
 
 interface QueryLeaderboardProps {
@@ -88,9 +88,9 @@ export const QueryLeaderboard: React.FC<QueryLeaderboardProps> = ({
 
   const getRankColor = (index: number): string => {
     if (index === 0) return 'text-yellow-600 dark:text-yellow-400';
-    if (index === 1) return 'text-gray-400 dark:text-gray-500';
+    if (index === 1) return 'text-gray-400 dark:text-gray-400';
     if (index === 2) return 'text-orange-600 dark:text-orange-400';
-    return 'text-gray-600 dark:text-gray-500';
+    return 'text-gray-600 dark:text-gray-400';
   };
 
   const getRankBadge = (index: number): string => {
@@ -112,7 +112,7 @@ export const QueryLeaderboard: React.FC<QueryLeaderboardProps> = ({
             onClick={() => setActiveTab(tab.id)}
             className={`flex items-center gap-2 px-4 py-2 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
               activeTab === tab.id
-                ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                ? 'border-blue-500 text-blue-700 dark:text-blue-400'
                 : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
             }`}
           >
@@ -135,7 +135,7 @@ export const QueryLeaderboard: React.FC<QueryLeaderboardProps> = ({
               className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-900 transition-colors"
             >
               {/* Rank */}
-              <div className={`flex-shrink-0 text-xl font-bold ${getRankColor(index)} w-8`}>
+              <div className={`shrink-0 text-xl font-bold ${getRankColor(index)} w-8`}>
                 {getRankBadge(index)}
               </div>
 

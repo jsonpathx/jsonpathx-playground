@@ -3,7 +3,7 @@
  */
 
 import React, { useMemo } from 'react';
-import { QueryMetrics } from '../../types/analytics';
+import type { QueryMetrics } from '../../types/analytics';
 import { formatExecutionTime } from '../../utils/analytics-utils';
 
 interface ExecutionTimeChartProps {
@@ -69,7 +69,7 @@ export const ExecutionTimeChart: React.FC<ExecutionTimeChartProps> = ({ metrics,
               bottom: `${((avgTime - minTime) / range) * 100}%`,
             }}
           >
-            <span className="absolute right-0 -top-4 text-xs text-blue-600 dark:text-blue-400 bg-white dark:bg-gray-800 px-1 rounded">
+            <span className="absolute right-0 -top-4 text-xs text-blue-700 dark:text-blue-400 bg-white dark:bg-gray-800 px-1 rounded-sm">
               Avg
             </span>
           </div>

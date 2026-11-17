@@ -1,113 +1,140 @@
-import { CodeGenerationOptions, GeneratedCode, SupportedLanguage } from '../types/code-generator';
-import {
-  LANGUAGE_TEMPLATES,
-  formatDataForCode,
-  escapeJsonString,
-  generateImports,
-  generateQueryExecution,
-  getBrowserScriptTag,
-} from './code-templates';
+import type { CodeGenerationOptions, GeneratedCode, SupportedLanguage } from '../types/code-generator';
+import { LANGUAGE_TEMPLATES, formatDataForCode } from './code-templates';
+import { JSONPATHX_VERSION } from '../version';
+
+/** Options the snippet passes to jsonpathx: filters run in RFC 9535 mode, without eval. */
+function queryOptionsLiteral(path: string): string {
+  return path.includes('[?') ? ", { filterMode: 'rfc' }" : '';
+}
+
+function indent(text: string, spaces: number): string {
+  const pad = ' '.repeat(spaces);
+  return text
+    .split('\n')
+    .map((line) => (line ? pad + line : line))
+    .join('\n');
+}
+
+interface Parts {
+  comments: boolean;
+  errors: boolean;
+}
+
+/** `body` wrapped in try/catch when error handling is on. */
+function guarded(body: string, onError: string, { errors }: Parts): string {
+  if (!errors) return body;
+  return `try {\n${indent(body, 2)}\n} catch (error) {\n${indent(onError, 2)}\n}`;
+}
+
+function comment(text: string, { comments }: Parts): string {
+  return comments ? `// ${text}\n` : '';
+}
+
+function nodeCode(language: 'javascript' | 'typescript', options: CodeGenerationOptions): string {
+  const { query: path, data, includeData, useAsync, maxDataPreview = 3 } = options;
+  const parts: Parts = { comments: options.includeComments, errors: options.includeErrorHandling };
+  const ts = language === 'typescript';
+  const fn = useAsync ? 'query' : 'querySync';
+  const invocation = `${fn}(path, data${queryOptionsLiteral(path)})`;
+  // query() resolves to T[] (or a JSONPathQuery for the config form), so the
+  // TypeScript version narrows it to an array.
+  const call = useAsync ? (ts ? `(await ${invocation}) as unknown[]` : `await ${invocation}`) : invocation;
+  const errorMessage = ts ? '(error as Error).message' : 'error.message';
+  const lines: string[] = [];
+
+  lines.push(`// Install: ${LANGUAGE_TEMPLATES[language]!.installCommand}`);
+  lines.push(ts ? '// Run: npx tsc example.ts && node example.js (Node.js 22.12+)' : '// Run: node example.js (Node.js 22.12+)');
+  lines.push('');
+
+  // Imports. Sync JavaScript is CommonJS; everything else uses ES module syntax.
+  if (!ts && !useAsync) {
+    lines.push(`const { querySync } = require('@jsonpathx/jsonpathx');`);
+    if (!includeData) lines.push(`const { readFileSync } = require('node:fs');`);
+  } else {
+    lines.push(`import { ${fn} } from '@jsonpathx/jsonpathx';`);
+    if (!includeData) lines.push(`import { readFileSync } from 'node:fs';`);
+  }
+  lines.push('');
+
+  lines.push(comment('Data to query', parts) + (includeData
+    ? `const data${ts ? ': unknown' : ''} = ${formatDataForCode(data, maxDataPreview)};`
+    : `const data${ts ? ': unknown' : ''} = JSON.parse(readFileSync('./data.json', 'utf8'));`));
+  lines.push('');
+  lines.push(comment('JSONPath query', parts) + `const path = ${JSON.stringify(path)};`);
+  lines.push('');
+
+  const run = comment('Run the query', parts) +
+    `const results = ${call};\n` +
+    `console.log(JSON.stringify(results, null, 2));\n` +
+    `console.log(\`Found \${results.length} result(s)\`);`;
+  const onError = `console.error('Error executing query:', ${errorMessage});\nprocess.exitCode = 1;`;
+
+  if (useAsync) {
+    // An async main() rather than top-level await, so the TypeScript output
+    // also runs when tsc compiles to CommonJS (its default).
+    lines.push(`async function main()${ts ? ': Promise<void>' : ''} {\n${indent(guarded(run, onError, parts), 2)}\n}`);
+    lines.push('');
+    lines.push('main();');
+  } else {
+    lines.push(guarded(run, onError, parts));
+  }
+  return lines.join('\n');
+}
+
+function browserCode(options: CodeGenerationOptions): string {
+  const { query: path, data, includeData, maxDataPreview = 3 } = options;
+  const parts: Parts = { comments: options.includeComments, errors: options.includeErrorHandling };
+  const dataLine = includeData
+    ? `const data = ${formatDataForCode(data, maxDataPreview)};`
+    : `const data = await (await fetch('./data.json')).json();`;
+  const run =
+    comment('Run the query and show the results', parts) +
+    `const results = await query(path, data${queryOptionsLiteral(path)});\n` +
+    `const heading = document.createElement('h2');\n` +
+    `heading.textContent = \`Query results (\${results.length} item(s))\`;\n` +
+    `const pre = document.createElement('pre');\n` +
+    `pre.textContent = JSON.stringify(results, null, 2);\n` +
+    `output.replaceChildren(heading, pre);`;
+  const onError = `const message = document.createElement('p');\nmessage.textContent = \`Error: \${error.message}\`;\noutput.replaceChildren(message);`;
+  const script = [
+    `import { query } from 'https://esm.sh/@jsonpathx/jsonpathx@${JSONPATHX_VERSION}';`,
+    '',
+    comment('Data to query', parts) + dataLine,
+    comment('JSONPath query', parts) + `const path = ${JSON.stringify(path)};`,
+    `const output = document.getElementById('results');`,
+    '',
+    guarded(run, onError, parts),
+  ].join('\n');
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JSONPathX browser example</title>
+</head>
+<body>
+  <h1>JSONPathX browser example</h1>
+  <div id="results">Running…</div>
+  <script type="module">
+${indent(script, 4)}
+  </script>
+</body>
+</html>`;
+}
 
 /**
- * Generate code for a specific language
+ * Generate a runnable snippet that reproduces the current query
  */
-export function generateCode(
-  language: SupportedLanguage,
-  options: CodeGenerationOptions
-): GeneratedCode {
+export function generateCode(language: SupportedLanguage, options: CodeGenerationOptions): GeneratedCode {
   const template = LANGUAGE_TEMPLATES[language];
   if (!template) {
     throw new Error(`Unsupported language: ${language}`);
   }
 
-  const {
-    query,
-    data,
-    includeData,
-    useAsync,
-    includeErrorHandling,
-    includeComments,
-    maxDataPreview = 3,
-  } = options;
-
-  let code = template.template;
-
-  // Replace installation command
-  code = code.replace(/{{INSTALL}}/g, template.install);
-
-  // Replace imports
-  const imports = generateImports(language, useAsync);
-  code = code.replace(/{{IMPORTS}}/g, imports);
-
-  // Replace data
-  if (includeData) {
-    const formattedData = formatDataForCode(data, maxDataPreview);
-    code = code.replace(/{{DATA}}/g, formattedData);
-  } else {
-    if (language === 'browser') {
-      code = code.replace(/{{DATA}}/g, `await (await fetch('./data.json')).json()  // Load from file`);
-    } else {
-      code = code.replace(/{{DATA}}/g, `require('./data.json')  // Load from file`);
-    }
-  }
-
-  // Replace query
-  const escapedQuery = escapeJsonString(query);
-  code = code.replace(/{{QUERY}}/g, escapedQuery);
-
-  // Replace query execution
-  const queryExecution = generateQueryExecution(language, useAsync);
-  code = code.replace(/{{QUERY_EXECUTION}}/g, queryExecution);
-
-  // Handle async/await sections
-  if (useAsync && template.supportsAsync) {
-    code = code.replace(/{{ASYNC_START}}/g, '');
-    code = code.replace(/{{ASYNC_END}}/g, '');
-    code = code.replace(/{{SYNC_ONLY}}/g, '// ');
-  } else {
-    // Remove async sections
-    code = code.replace(/{{ASYNC_START}}[\s\S]*?{{ASYNC_END}}/g, '');
-    code = code.replace(/{{SYNC_ONLY}}/g, '');
-  }
-
-  // Handle error handling sections
-  if (includeErrorHandling) {
-    code = code.replace(/{{ERROR_HANDLING_START}}/g, '');
-    code = code.replace(/{{ERROR_HANDLING_END}}/g, '');
-    code = code.replace(/{{ERROR_HANDLING_IMPORT}}/g, '');
-  } else {
-    // Remove error handling sections
-    code = code.replace(/{{ERROR_HANDLING_START}}[\s\S]*?{{ERROR_HANDLING_END}}/g, '');
-    code = code.replace(/{{ERROR_HANDLING_IMPORT}}/g, '');
-  }
-
-  // Handle comments
-  if (includeComments) {
-    code = code.replace(/{{COMMENTS_START}}/g, '');
-    code = code.replace(/{{COMMENTS_END}}/g, '');
-  } else {
-    // Remove comment sections
-    code = code.replace(/{{COMMENTS_START}}[\s\S]*?{{COMMENTS_END}}/g, '');
-  }
-
-  // Handle browser-specific script tag
-  if (language === 'browser') {
-    code = code.replace(/{{BROWSER_SCRIPT}}/g, getBrowserScriptTag());
-  }
-
-  // Clean up extra blank lines
-  code = code.replace(/\n\n\n+/g, '\n\n');
-  code = code.trim();
-
-  // Generate filename
-  const timestamp = Date.now();
-  const filename = `jsonpathx-example-${timestamp}.${template.extension}`;
-
-  return {
-    code,
-    language,
-    filename,
-  };
+  const code = language === 'browser' ? browserCode(options) : nodeCode(language, options);
+  const filename = `jsonpathx-example-${Date.now()}.${template.extension}`;
+  return { code: code.replace(/\n{3,}/g, '\n\n').trim() + '\n', language, filename };
 }
 
 /**
@@ -137,7 +164,7 @@ export function getInstallationInstructions(language: SupportedLanguage): string
   // Add language-specific setup
   switch (language) {
     case 'javascript':
-      instructions.push('**Prerequisites:** Node.js 16+ installed');
+      instructions.push('**Prerequisites:** Node.js 22.12+ installed');
       instructions.push('');
       instructions.push('**Installation:**');
       instructions.push('```bash');
@@ -151,7 +178,7 @@ export function getInstallationInstructions(language: SupportedLanguage): string
       break;
 
     case 'typescript':
-      instructions.push('**Prerequisites:** Node.js 16+ installed');
+      instructions.push('**Prerequisites:** Node.js 22.12+ installed');
       instructions.push('');
       instructions.push('**Installation:**');
       instructions.push('```bash');
@@ -169,8 +196,8 @@ export function getInstallationInstructions(language: SupportedLanguage): string
       instructions.push('**Prerequisites:** Modern web browser');
       instructions.push('');
       instructions.push('**Setup:**');
-      instructions.push('1. Include JSONPathX library via CDN or bundler');
-      instructions.push('2. Open the HTML file in a browser');
+      instructions.push('1. The page loads JSONPathX as an ES module from esm.sh');
+      instructions.push('2. Serve the folder (for example `npx serve .`) and open the HTML file');
       instructions.push('');
       instructions.push('**Alternative (with bundler):**');
       instructions.push('```bash');

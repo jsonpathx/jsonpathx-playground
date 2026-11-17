@@ -89,14 +89,14 @@ const QueryEditor = ({ query, onChange, isExecuting, executionTime, error, getSh
   };
 
   return (
-    <div className="bg-white/80 dark:bg-gray-800/50 backdrop-blur-sm rounded-lg border border-gray-300 dark:border-gray-700 p-6 shadow-xl transition-colors duration-300">
+    <div className="bg-white/80 dark:bg-gray-800/50 backdrop-blur-xs rounded-lg border border-gray-300 dark:border-gray-700 p-6 shadow-xl transition-colors duration-300">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center transition-colors duration-300">
           <span className="mr-2">🔍</span>
           Query Editor
         </h2>
         {isExecuting && (
-          <div className="flex items-center text-blue-600 dark:text-blue-400 text-sm transition-colors duration-300">
+          <div className="flex items-center text-blue-700 dark:text-blue-400 text-sm transition-colors duration-300">
             <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-600 dark:border-blue-400 border-t-transparent mr-2"></div>
             Executing...
           </div>
@@ -144,16 +144,16 @@ const QueryEditor = ({ query, onChange, isExecuting, executionTime, error, getSh
               id="query-input"
               value={query}
               onChange={(e) => onChange(e.target.value)}
-              className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white font-mono text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none transition-all duration-300"
+              className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white font-mono text-sm focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none transition-all duration-300"
               placeholder="Enter JSONPath query... e.g., $.store.book[*].author"
               rows={3}
               spellCheck={false}
             />
             <div className="absolute bottom-2 right-2 flex items-center space-x-2 pointer-events-none">
-              <kbd className="px-2 py-1 text-xs font-semibold text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded shadow-sm">
+              <kbd className="px-2 py-1 text-xs font-semibold text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-sm shadow-xs">
                 {modifierKey}+K
               </kbd>
-              <span className="text-xs text-gray-500 dark:text-gray-500">to clear</span>
+              <span className="text-xs text-gray-500 dark:text-gray-400">to clear</span>
             </div>
           </div>
         </div>
@@ -163,13 +163,13 @@ const QueryEditor = ({ query, onChange, isExecuting, executionTime, error, getSh
           <div className="flex items-center space-x-4">
             {executionTime !== null && (
               <div className="text-xs text-gray-600 dark:text-gray-400 transition-colors duration-300">
-                <span className="font-semibold text-green-600 dark:text-green-400">{executionTime.toFixed(2)}ms</span>
+                <span className="font-semibold text-green-700 dark:text-green-400">{executionTime.toFixed(2)}ms</span>
                 {' '}execution time
               </div>
             )}
-            <div className="flex items-center space-x-1 text-xs text-gray-500 dark:text-gray-500">
+            <div className="flex items-center space-x-1 text-xs text-gray-500 dark:text-gray-400">
               <span>Press</span>
-              <kbd className="px-2 py-0.5 text-xs font-semibold text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded">
+              <kbd className="px-2 py-0.5 text-xs font-semibold text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-sm">
                 {modifierKey}+Enter
               </kbd>
               <span>to execute</span>
@@ -201,10 +201,10 @@ const QueryEditor = ({ query, onChange, isExecuting, executionTime, error, getSh
           <div className="text-xs text-blue-800 dark:text-blue-300 transition-colors duration-300">
             <div className="font-semibold mb-2">💡 Quick Tips:</div>
             <ul className="space-y-1 list-disc list-inside">
-              <li>Use <code className="bg-blue-100 dark:bg-blue-900/40 px-1 rounded">$</code> for root</li>
-              <li>Use <code className="bg-blue-100 dark:bg-blue-900/40 px-1 rounded">[*]</code> for all items</li>
-              <li>Use <code className="bg-blue-100 dark:bg-blue-900/40 px-1 rounded">[?(@.price &lt; 10)]</code> for filters</li>
-              <li>Use <code className="bg-blue-100 dark:bg-blue-900/40 px-1 rounded">..</code> for recursive descent</li>
+              <li>Use <code className="bg-blue-100 dark:bg-blue-900/40 px-1 rounded-sm">$</code> for root</li>
+              <li>Use <code className="bg-blue-100 dark:bg-blue-900/40 px-1 rounded-sm">[*]</code> for all items</li>
+              <li>Use <code className="bg-blue-100 dark:bg-blue-900/40 px-1 rounded-sm">[?(@.price &lt; 10)]</code> for filters</li>
+              <li>Use <code className="bg-blue-100 dark:bg-blue-900/40 px-1 rounded-sm">..</code> for recursive descent</li>
             </ul>
           </div>
         </div>

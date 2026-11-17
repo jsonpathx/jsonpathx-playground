@@ -1,16 +1,15 @@
 /**
- * Unit tests for search utilities
- * Run with: npm test search-utils.test.ts
+ * Unit tests for search utilities (`npm test`).
  */
 
-import { describe, it, expect } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   recursiveSearch,
   filterResults,
   highlightText,
   highlightJsonText,
   debounce,
-} from '../search-utils';
+} from '../src/utils/search-utils';
 
 describe('recursiveSearch', () => {
   it('should find matches in string values', () => {
@@ -183,7 +182,14 @@ describe('highlightJsonText', () => {
 });
 
 describe('debounce', () => {
-  it('should delay function execution', (done) => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('should delay function execution', () => {
     let called = false;
     const debouncedFn = debounce(() => {
       called = true;
@@ -191,14 +197,13 @@ describe('debounce', () => {
 
     debouncedFn();
     expect(called).toBe(false);
-
-    setTimeout(() => {
-      expect(called).toBe(true);
-      done();
-    }, 150);
+    vi.advanceTimersByTime(99);
+    expect(called).toBe(false);
+    vi.advanceTimersByTime(1);
+    expect(called).toBe(true);
   });
 
-  it('should cancel previous calls', (done) => {
+  it('should cancel previous calls', () => {
     let callCount = 0;
     const debouncedFn = debounce(() => {
       callCount++;
@@ -207,25 +212,32 @@ describe('debounce', () => {
     debouncedFn();
     debouncedFn();
     debouncedFn();
-
-    setTimeout(() => {
-      expect(callCount).toBe(1); // Only last call executed
-      done();
-    }, 150);
+    vi.advanceTimersByTime(150);
+    expect(callCount).toBe(1); // Only last call executed
   });
 
-  it('should pass arguments correctly', (done) => {
+  it('should pass arguments correctly', () => {
     let receivedArg: string | undefined;
     const debouncedFn = debounce((arg: string) => {
       receivedArg = arg;
     }, 50);
 
+    debouncedFn('first');
     debouncedFn('test');
+    vi.advanceTimersByTime(100);
+    expect(receivedArg).toBe('test');
+  });
 
-    setTimeout(() => {
-      expect(receivedArg).toBe('test');
-      done();
-    }, 100);
+  it('cancel() drops a pending call', () => {
+    let called = false;
+    const debouncedFn = debounce(() => {
+      called = true;
+    }, 50);
+
+    debouncedFn();
+    debouncedFn.cancel();
+    vi.advanceTimersByTime(100);
+    expect(called).toBe(false);
   });
 });
 
@@ -249,7 +261,7 @@ describe('Edge cases', () => {
   });
 
   it('should handle circular references gracefully', () => {
-    const data: any = { name: 'test' };
+    const data: { name: string; self?: unknown } = { name: 'test' };
     data.self = data; // Create circular reference
 
     // Should not cause infinite loop or stack overflow

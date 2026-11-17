@@ -1,4 +1,4 @@
-import { FieldNode, SchemaAnalysis, FilterCondition, ArraySlice } from '../types/query-builder';
+import type { FieldNode, SchemaAnalysis, FilterCondition, ArraySlice } from '../types/query-builder';
 
 /**
  * Extracts the schema structure from JSON data

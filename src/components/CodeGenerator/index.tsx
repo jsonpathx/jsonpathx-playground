@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
-import { SupportedLanguage, CodeGenerationOptions } from '../../types/code-generator';
+import type { SupportedLanguage, CodeGenerationOptions } from '../../types/code-generator';
 import { generateCode } from '../../utils/code-generator';
 import { downloadCode } from '../../utils/code-generator';
 import { LANGUAGE_TEMPLATES } from '../../utils/code-templates';
@@ -74,10 +74,10 @@ const CodeGenerator = ({ query, data, results, onClose }: CodeGeneratorProps) =>
   }, [selectedLanguage]);
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden flex flex-col transition-colors duration-300">
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-4 flex items-center justify-between">
+        <div className="bg-linear-to-r from-blue-600 to-purple-600 text-white px-6 py-4 flex items-center justify-between">
           <div>
             <h2 className="text-2xl font-bold flex items-center space-x-2">
               <span>Code Generator</span>
@@ -133,7 +133,7 @@ const CodeGenerator = ({ query, data, results, onClose }: CodeGeneratorProps) =>
                   type="checkbox"
                   checked={includeData}
                   onChange={(e) => setIncludeData(e.target.checked)}
-                  className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+                  className="w-4 h-4 text-blue-700 rounded-sm focus:ring-2 focus:ring-blue-500"
                 />
                 <div className="flex-1">
                   <span className="text-sm font-medium text-gray-900 dark:text-white transition-colors duration-300">
@@ -156,7 +156,7 @@ const CodeGenerator = ({ query, data, results, onClose }: CodeGeneratorProps) =>
                   checked={useAsync}
                   onChange={(e) => setUseAsync(e.target.checked)}
                   disabled={!supportsAsync}
-                  className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+                  className="w-4 h-4 text-blue-700 rounded-sm focus:ring-2 focus:ring-blue-500"
                 />
                 <div className="flex-1">
                   <span className="text-sm font-medium text-gray-900 dark:text-white transition-colors duration-300">
@@ -174,7 +174,7 @@ const CodeGenerator = ({ query, data, results, onClose }: CodeGeneratorProps) =>
                   type="checkbox"
                   checked={includeErrorHandling}
                   onChange={(e) => setIncludeErrorHandling(e.target.checked)}
-                  className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+                  className="w-4 h-4 text-blue-700 rounded-sm focus:ring-2 focus:ring-blue-500"
                 />
                 <div className="flex-1">
                   <span className="text-sm font-medium text-gray-900 dark:text-white transition-colors duration-300">
@@ -192,7 +192,7 @@ const CodeGenerator = ({ query, data, results, onClose }: CodeGeneratorProps) =>
                   type="checkbox"
                   checked={includeComments}
                   onChange={(e) => setIncludeComments(e.target.checked)}
-                  className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+                  className="w-4 h-4 text-blue-700 rounded-sm focus:ring-2 focus:ring-blue-500"
                 />
                 <div className="flex-1">
                   <span className="text-sm font-medium text-gray-900 dark:text-white transition-colors duration-300">
@@ -231,7 +231,7 @@ const CodeGenerator = ({ query, data, results, onClose }: CodeGeneratorProps) =>
             <h3 className="text-sm font-semibold text-purple-900 dark:text-purple-100 mb-2 transition-colors duration-300">
               Current Query:
             </h3>
-            <code className="block bg-purple-100 dark:bg-purple-900/50 text-purple-900 dark:text-purple-200 px-3 py-2 rounded text-sm font-mono transition-colors duration-300">
+            <code className="block bg-purple-100 dark:bg-purple-900/50 text-purple-900 dark:text-purple-200 px-3 py-2 rounded-sm text-sm font-mono transition-colors duration-300">
               {query}
             </code>
             {results !== null && results !== undefined && (

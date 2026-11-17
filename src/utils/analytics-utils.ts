@@ -2,7 +2,7 @@
  * Analytics utility functions for calculating performance statistics
  */
 
-import {
+import type {
   QueryMetrics,
   PerformanceStats,
   PerformanceInsight,

@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
+import type {
+  QueryHistoryItem} from '../utils/storage';
 import {
-  QueryHistoryItem,
   getQueryHistory,
   saveQueryHistory,
   getFavorites,
@@ -26,29 +27,18 @@ interface UseQueryHistoryResult {
  * Tracks last 50 queries with timestamps and favorite functionality
  */
 export function useQueryHistory(): UseQueryHistoryResult {
-  const [history, setHistory] = useState<QueryHistoryItem[]>([]);
-  const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
+  // Read history and favorites from localStorage once, on the first render.
+  const [history, setHistory] = useState<QueryHistoryItem[]>(getQueryHistory);
+  const [favoriteIds, setFavoriteIds] = useState<Set<string>>(getFavorites);
 
-  // Load history and favorites from localStorage on mount
+  // Persist history and favorites whenever they change (also when they become
+  // empty, so removing the last favorite or entry sticks after a reload).
   useEffect(() => {
-    const loadedHistory = getQueryHistory();
-    const loadedFavorites = getFavorites();
-    setHistory(loadedHistory);
-    setFavoriteIds(loadedFavorites);
-  }, []);
-
-  // Persist history to localStorage whenever it changes
-  useEffect(() => {
-    if (history.length > 0) {
-      saveQueryHistory(history);
-    }
+    saveQueryHistory(history);
   }, [history]);
 
-  // Persist favorites to localStorage whenever they change
   useEffect(() => {
-    if (favoriteIds.size > 0) {
-      saveFavorites(favoriteIds);
-    }
+    saveFavorites(favoriteIds);
   }, [favoriteIds]);
 
   /**

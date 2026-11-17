@@ -3,7 +3,7 @@
  * Manage uploaded datasets (list, delete, clear all)
  */
 
-import { DatasetMetadata } from '../types/dataset';
+import type { DatasetMetadata } from '../types/dataset';
 
 interface DatasetManagerProps {
   datasets: DatasetMetadata[];
@@ -52,7 +52,7 @@ export default function DatasetManager({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50 p-4">
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
@@ -94,7 +94,7 @@ export default function DatasetManager({
               <p className="text-gray-600 dark:text-gray-400 text-lg">
                 No uploaded datasets
               </p>
-              <p className="text-gray-500 dark:text-gray-500 text-sm mt-2">
+              <p className="text-gray-500 dark:text-gray-400 text-sm mt-2">
                 Upload a custom JSON file to get started
               </p>
             </div>
@@ -117,12 +117,12 @@ export default function DatasetManager({
                           {dataset.name}
                         </h3>
                         {dataset.id === currentDatasetId && (
-                          <span className="text-xs px-2 py-0.5 bg-blue-500 text-white rounded">
+                          <span className="text-xs px-2 py-0.5 bg-blue-500 text-white rounded-sm">
                             Active
                           </span>
                         )}
                         {!dataset.isPersisted && (
-                          <span className="text-xs px-2 py-0.5 bg-yellow-200 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 rounded">
+                          <span className="text-xs px-2 py-0.5 bg-yellow-200 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 rounded-sm">
                             Session Only
                           </span>
                         )}
@@ -169,7 +169,7 @@ export default function DatasetManager({
                       </div>
 
                       {/* Storage info */}
-                      <div className="mt-2 text-xs text-gray-500 dark:text-gray-500">
+                      <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
                         {dataset.isPersisted ? (
                           <span className="flex items-center space-x-1">
                             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -201,7 +201,7 @@ export default function DatasetManager({
                     {/* Delete button */}
                     <button
                       onClick={() => handleRemove(dataset.id)}
-                      className="ml-4 p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+                      className="ml-4 p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-sm transition-colors"
                       title="Delete dataset"
                     >
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

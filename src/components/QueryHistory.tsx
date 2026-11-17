@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { QueryHistoryItem } from '../utils/storage';
+import type { QueryHistoryItem } from '../utils/storage';
 
 interface QueryHistoryProps {
   history: QueryHistoryItem[];
@@ -62,7 +62,7 @@ const QueryHistory = ({
   };
 
   return (
-    <div className="bg-white/80 dark:bg-gray-800/50 backdrop-blur-sm rounded-lg border border-gray-300 dark:border-gray-700 p-6 shadow-xl transition-colors duration-300">
+    <div className="bg-white/80 dark:bg-gray-800/50 backdrop-blur-xs rounded-lg border border-gray-300 dark:border-gray-700 p-6 shadow-xl transition-colors duration-300">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center transition-colors duration-300">
           <span className="mr-2">⏱️</span>
@@ -71,7 +71,7 @@ const QueryHistory = ({
         {history.length > 0 && (
           <button
             onClick={handleClearHistory}
-            className="text-xs text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 transition-colors px-2 py-1 rounded hover:bg-red-100 dark:hover:bg-red-900/20"
+            className="text-xs text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 transition-colors px-2 py-1 rounded-sm hover:bg-red-100 dark:hover:bg-red-900/20"
             title="Clear all history"
           >
             Clear All
@@ -107,11 +107,14 @@ const QueryHistory = ({
       <div className="mb-4">
         <div className="relative">
           <input
-            type="text"
+            id="history-search"
+            name="history-search"
+            aria-label="Search query history"
+            type="search"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Search queries..."
-            className="w-full px-4 py-2 pl-10 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-300"
+            className="w-full px-4 py-2 pl-10 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white text-sm focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-300"
           />
           <svg
             className="absolute left-3 top-2.5 h-5 w-5 text-gray-500 dark:text-gray-400 transition-colors duration-300"
@@ -181,10 +184,10 @@ const QueryHistory = ({
                   {/* Favorite Toggle */}
                   <button
                     onClick={() => onToggleFavorite(item.id)}
-                    className={`ml-2 flex-shrink-0 transition-colors ${
+                    className={`ml-2 shrink-0 transition-colors ${
                       isFav
                         ? 'text-yellow-500 dark:text-yellow-400 hover:text-yellow-600 dark:hover:text-yellow-300'
-                        : 'text-gray-400 dark:text-gray-500 hover:text-yellow-500 dark:hover:text-yellow-400'
+                        : 'text-gray-400 dark:text-gray-400 hover:text-yellow-500 dark:hover:text-yellow-400'
                     }`}
                     title={isFav ? 'Remove from favorites' : 'Add to favorites'}
                   >
@@ -213,13 +216,13 @@ const QueryHistory = ({
                     </span>
 
                     {item.executionTime !== undefined && (
-                      <span className="text-green-600 dark:text-green-400 transition-colors duration-300">
+                      <span className="text-green-800 dark:text-green-400 transition-colors duration-300">
                         {item.executionTime.toFixed(2)}ms
                       </span>
                     )}
 
                     {item.resultCount !== undefined && (
-                      <span className="text-blue-600 dark:text-blue-400 transition-colors duration-300">
+                      <span className="text-blue-700 dark:text-blue-400 transition-colors duration-300">
                         {item.resultCount} result{item.resultCount !== 1 ? 's' : ''}
                       </span>
                     )}
@@ -229,7 +232,7 @@ const QueryHistory = ({
                   <div className="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button
                       onClick={() => onQuerySelect(item.query)}
-                      className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
+                      className="text-blue-700 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
                       title="Run this query"
                     >
                       <svg
@@ -278,7 +281,7 @@ const QueryHistory = ({
                 {/* Active Indicator */}
                 {isActive && (
                   <div className="absolute top-3 right-3">
-                    <span className="text-xs bg-blue-500 text-white px-2 py-0.5 rounded-full">
+                    <span className="text-xs bg-blue-700 text-white px-2 py-0.5 rounded-full">
                       Active
                     </span>
                   </div>

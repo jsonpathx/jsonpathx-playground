@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback, useState } from 'react';
 
 interface UrlStateOptions {
   paramName?: string;
@@ -6,131 +6,75 @@ interface UrlStateOptions {
 }
 
 interface UrlStateResult {
-  value: string | null;
+  value: string;
   setValue: (newValue: string) => void;
   getShareableUrl: () => string;
 }
 
-/**
- * Custom hook to manage state synchronized with URL parameters
- * Supports base64 encoding for safe URL transmission
- */
-export function useUrlState(
-  defaultValue: string,
-  options: UrlStateOptions = {}
-): UrlStateResult {
-  const { paramName = 'q', compress = true } = options;
+/** Encode a value for the URL: URL-safe base64 when `compress`, else percent-encoding. */
+export function encodeUrlValue(val: string, compress = true): string {
+  if (!compress) return encodeURIComponent(val);
+  try {
+    return btoa(val).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  } catch {
+    // btoa only takes Latin-1; fall back to percent-encoding for other text.
+    return encodeURIComponent(val);
+  }
+}
 
-  const [value, setValueState] = useState<string | null>(null);
-  const [initialized, setInitialized] = useState(false);
-
-  // Encode value to base64 URL-safe format
-  const encodeValue = useCallback((val: string): string => {
-    if (!compress) {
-      return encodeURIComponent(val);
-    }
-
+/** Decode a value written by `encodeUrlValue`. */
+export function decodeUrlValue(encoded: string, compress = true): string {
+  if (!compress) return decodeURIComponent(encoded);
+  try {
+    let base64 = encoded.replace(/-/g, '+').replace(/_/g, '/');
+    const padding = base64.length % 4;
+    if (padding > 0) base64 += '='.repeat(4 - padding);
+    return atob(base64);
+  } catch {
     try {
-      // Convert to base64 and make it URL-safe
-      const base64 = btoa(val);
-      return base64
-        .replace(/\+/g, '-')
-        .replace(/\//g, '_')
-        .replace(/=+$/, ''); // Remove padding
-    } catch (error) {
-      console.error('Error encoding value:', error);
-      return encodeURIComponent(val);
-    }
-  }, [compress]);
-
-  // Decode value from base64 URL-safe format
-  const decodeValue = useCallback((encoded: string): string => {
-    if (!compress) {
       return decodeURIComponent(encoded);
+    } catch {
+      return encoded;
     }
+  }
+}
 
-    try {
-      // Restore base64 padding and standard characters
-      let base64 = encoded
-        .replace(/-/g, '+')
-        .replace(/_/g, '/');
+function readFromUrl(paramName: string, compress: boolean, defaultValue: string): string {
+  const urlValue = new URLSearchParams(window.location.search).get(paramName);
+  return urlValue ? decodeUrlValue(urlValue, compress) : defaultValue;
+}
 
-      // Add padding if needed
-      const padding = base64.length % 4;
-      if (padding > 0) {
-        const paddingNeeded = 4 - padding;
-        for (let i = 0; i < paddingNeeded; i++) {
-          base64 += '=';
-        }
-      }
+function buildUrl(value: string, paramName: string, compress: boolean, defaultValue: string): URL {
+  const url = new URL(window.location.href);
+  if (value && value !== defaultValue) {
+    url.searchParams.set(paramName, encodeUrlValue(value, compress));
+  } else {
+    url.searchParams.delete(paramName);
+  }
+  return url;
+}
 
-      return atob(base64);
-    } catch (error) {
-      console.error('Error decoding value:', error);
-      // Fallback to URL decode
-      try {
-        return decodeURIComponent(encoded);
-      } catch {
-        return encoded;
-      }
-    }
-  }, [compress]);
+/**
+ * State kept in a URL query parameter (URL-safe base64 by default), so a query
+ * can be shared as a link. The initial value comes from the URL on first render.
+ */
+export function useUrlState(defaultValue: string, options: UrlStateOptions = {}): UrlStateResult {
+  const { paramName = 'q', compress = true } = options;
+  const [value, setValueState] = useState(() => readFromUrl(paramName, compress, defaultValue));
 
-  // Initialize from URL on mount
-  useEffect(() => {
-    if (initialized) return;
-
-    const urlParams = new URLSearchParams(window.location.search);
-    const urlValue = urlParams.get(paramName);
-
-    if (urlValue) {
-      const decoded = decodeValue(urlValue);
-      setValueState(decoded);
-    } else {
-      setValueState(defaultValue);
-    }
-
-    setInitialized(true);
-  }, [paramName, defaultValue, decodeValue, initialized]);
-
-  // Update URL when value changes (without full page reload)
   const setValue = useCallback(
     (newValue: string) => {
       setValueState(newValue);
-
-      // Update URL without reload
-      const url = new URL(window.location.href);
-      const params = new URLSearchParams(url.search);
-
-      if (newValue && newValue !== defaultValue) {
-        params.set(paramName, encodeValue(newValue));
-      } else {
-        params.delete(paramName);
-      }
-
-      const newUrl = `${url.pathname}${params.toString() ? '?' + params.toString() : ''}${url.hash}`;
-      window.history.replaceState({}, '', newUrl);
+      const url = buildUrl(newValue, paramName, compress, defaultValue);
+      window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`);
     },
-    [paramName, encodeValue, defaultValue]
+    [paramName, compress, defaultValue],
   );
 
-  // Get shareable URL with current value
-  const getShareableUrl = useCallback((): string => {
-    const url = new URL(window.location.href);
-    const params = new URLSearchParams(url.search);
+  const getShareableUrl = useCallback(
+    (): string => buildUrl(value, paramName, compress, defaultValue).toString(),
+    [value, paramName, compress, defaultValue],
+  );
 
-    if (value && value !== defaultValue) {
-      params.set(paramName, encodeValue(value));
-    } else {
-      params.delete(paramName);
-    }
-
-    return `${url.origin}${url.pathname}${params.toString() ? '?' + params.toString() : ''}${url.hash}`;
-  }, [value, paramName, encodeValue, defaultValue]);
-
-  return {
-    value,
-    setValue,
-    getShareableUrl,
-  };
+  return { value, setValue, getShareableUrl };
 }
